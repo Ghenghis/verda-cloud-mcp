@@ -3,8 +3,6 @@ Cost Analytics - Spending history, reports, forecasts.
 MEGA-TOOL bundling 12 functions into 1 tool.
 """
 
-
-
 # GPU pricing data
 GPU_PRICING = {
     "GB300": {"spot": 1.36, "ondemand": 5.45},
@@ -18,7 +16,9 @@ GPU_PRICING = {
 }
 
 
-def cost_analytics(action: str = "summary", period: str = "daily", gpu_type: str = "B300", hours: float = 0, **kwargs) -> str:
+def cost_analytics(
+    action: str = "summary", period: str = "daily", gpu_type: str = "B300", hours: float = 0, **kwargs
+) -> str:
     """
     MEGA-TOOL: Cost Analytics (12 functions).
 
@@ -252,7 +252,7 @@ TOTAL POTENTIAL SAVINGS: ~$83/week
 Hours: {hours}
 Spot:      ${spot:.2f}
 On-Demand: ${ondemand:.2f}
-Savings:   ${savings:.2f} ({(savings/ondemand)*100:.0f}%)
+Savings:   ${savings:.2f} ({(savings / ondemand) * 100:.0f}%)
 """
         return "Provide gpu_type and hours for calculation"
 

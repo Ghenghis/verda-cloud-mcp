@@ -4,7 +4,9 @@ MEGA-TOOL bundling 10 functions into 1 tool.
 """
 
 
-def notifications(action: str = "setup", channel: str = "webhook", webhook_url: str = "", message: str = "", **kwargs) -> str:
+def notifications(
+    action: str = "setup", channel: str = "webhook", webhook_url: str = "", message: str = "", **kwargs
+) -> str:
     """
     MEGA-TOOL: Notifications (10 functions).
 
@@ -30,7 +32,7 @@ Quick Setup:
 requests.post("{webhook_url or "YOUR_URL"}", json={{"content": "🧪 Test from Verda MCP!"}})'''
 
     elif action == "discord":
-        return '''# Discord Notification
+        return """# Discord Notification
 import requests
 
 WEBHOOK = "YOUR_DISCORD_WEBHOOK"
@@ -45,10 +47,10 @@ notify("✅ Training started on 4x B300 SPOT")
 notify("⚠️ GPU utilization dropped below 80%", 0xffaa00)
 notify("🎉 Training complete! Loss: 0.123", 0x00ff00)
 notify("❌ Training failed: OOM", 0xff0000)
-'''
+"""
 
     elif action == "slack":
-        return '''# Slack Notification
+        return """# Slack Notification
 import requests
 
 WEBHOOK = "YOUR_SLACK_WEBHOOK"
@@ -59,10 +61,10 @@ def notify(msg, emoji="🚀"):
 notify("Training started on 4x B300 SPOT", "🚀")
 notify("Checkpoint saved at step 1000", "💾")
 notify("Training complete!", "🎉")
-'''
+"""
 
     elif action == "telegram":
-        return '''# Telegram Notification
+        return """# Telegram Notification
 import requests
 
 BOT_TOKEN = "YOUR_BOT_TOKEN"
@@ -74,10 +76,10 @@ def notify(msg):
 
 notify("Training started!")
 notify("<b>Complete!</b> Loss: 0.123")
-'''
+"""
 
     elif action == "email":
-        return '''# Email Notification (Gmail)
+        return """# Email Notification (Gmail)
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -94,7 +96,7 @@ def send_email(subject, body, to_email):
         server.send_message(msg)
 
 send_email("Training Complete", "<h1>Success!</h1><p>Loss: 0.123</p>", "you@email.com")
-'''
+"""
 
     elif action == "webhook":
         return f'''# Generic Webhook

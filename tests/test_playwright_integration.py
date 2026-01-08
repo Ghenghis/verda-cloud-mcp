@@ -121,7 +121,6 @@ class VerdaMCPTestSuite:
         """Test all 87 tools are properly defined."""
         start = datetime.now()
         try:
-
             # Count tools by checking registered handlers
             tool_count = 87  # Expected count
 

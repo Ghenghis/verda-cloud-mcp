@@ -29,15 +29,25 @@ class Template:
 
 
 TEMPLATES = {
-    "llama3-lora": Template("LLaMA 3 LoRA", Category.LLM, "llama3-8b", "A6000", 2, 4, 2e-5, 3, "Standard LoRA fine-tuning"),
+    "llama3-lora": Template(
+        "LLaMA 3 LoRA", Category.LLM, "llama3-8b", "A6000", 2, 4, 2e-5, 3, "Standard LoRA fine-tuning"
+    ),
     "llama3-full": Template("LLaMA 3 Full", Category.LLM, "llama3-8b", "H100", 4, 2, 1e-5, 3, "Full fine-tuning"),
     "mistral-lora": Template("Mistral LoRA", Category.LLM, "mistral-7b", "A6000", 2, 4, 2e-5, 3, "Mistral 7B LoRA"),
-    "codellama-lora": Template("CodeLLaMA LoRA", Category.CODE, "codellama-34b", "H100", 2, 2, 1e-5, 3, "Code generation"),
-    "deepseek-coder": Template("DeepSeek Coder", Category.CODE, "deepseek-33b", "H100", 2, 2, 1e-5, 3, "Code assistant"),
+    "codellama-lora": Template(
+        "CodeLLaMA LoRA", Category.CODE, "codellama-34b", "H100", 2, 2, 1e-5, 3, "Code generation"
+    ),
+    "deepseek-coder": Template(
+        "DeepSeek Coder", Category.CODE, "deepseek-33b", "H100", 2, 2, 1e-5, 3, "Code assistant"
+    ),
     "sdxl-lora": Template("SDXL LoRA", Category.IMAGE, "sdxl-base", "A6000", 1, 1, 1e-6, 1000, "Image generation"),
     "flux-lora": Template("FLUX LoRA", Category.IMAGE, "flux-dev", "L40S", 1, 1, 1e-6, 500, "FLUX fine-tuning"),
-    "whisper-ft": Template("Whisper Fine-tune", Category.SPEECH, "whisper-large", "A6000", 1, 8, 1e-5, 5, "Speech recognition"),
-    "bge-embed": Template("BGE Embedding", Category.EMBEDDING, "bge-large", "A6000", 1, 32, 2e-5, 3, "Custom embeddings"),
+    "whisper-ft": Template(
+        "Whisper Fine-tune", Category.SPEECH, "whisper-large", "A6000", 1, 8, 1e-5, 5, "Speech recognition"
+    ),
+    "bge-embed": Template(
+        "BGE Embedding", Category.EMBEDDING, "bge-large", "A6000", 1, 32, 2e-5, 3, "Custom embeddings"
+    ),
     "e5-embed": Template("E5 Embedding", Category.EMBEDDING, "e5-mistral", "A6000", 2, 16, 2e-5, 3, "E5 embeddings"),
 }
 
@@ -112,13 +122,13 @@ trainer = Trainer(model=model, args=args, train_dataset=dataset)
 trainer.train()
 '''
         elif t.category == Category.IMAGE:
-            return f'''# {t.name} Training Script
+            return f"""# {t.name} Training Script
 from diffusers import StableDiffusionXLPipeline
 import torch
 
 pipe = StableDiffusionXLPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0")
 # Add LoRA training with kohya-ss/sd-scripts
-'''
+"""
         return f"# Template for {t.category.value}"
 
     elif action == "config":
@@ -134,9 +144,9 @@ pipe = StableDiffusionXLPipeline.from_pretrained("stabilityai/stable-diffusion-x
         return "nvidia-smi && python -c 'import torch; print(f\"GPUs: {torch.cuda.device_count()}\")'"
 
     elif action == "data_format":
-        return '''# Expected data format (JSONL)
+        return """# Expected data format (JSONL)
 {"instruction": "Summarize this text", "input": "Long text here...", "output": "Summary"}
-{"instruction": "Translate to French", "input": "Hello world", "output": "Bonjour le monde"}'''
+{"instruction": "Translate to French", "input": "Hello world", "output": "Bonjour le monde"}"""
 
     elif action == "customize":
         return "# Modify template parameters in TrainingArguments"

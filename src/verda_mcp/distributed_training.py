@@ -40,7 +40,7 @@ GPUs │ Speedup │ Efficiency
 """
 
     elif action == "deepspeed":
-        return f'''# DeepSpeed ZeRO-3 Configuration
+        return f"""# DeepSpeed ZeRO-3 Configuration
 # Nodes: {nodes} | GPUs/Node: {gpus_per_node} | Total: {nodes * gpus_per_node}
 
 # ds_config.json
@@ -70,10 +70,10 @@ deepspeed --num_gpus={gpus_per_node} --num_nodes={nodes} \\
   --hostfile=hostfile.txt \\
   --master_addr=node0 --master_port=29500 \\
   train.py --deepspeed ds_config.json
-'''
+"""
 
     elif action == "fsdp":
-        return f'''# PyTorch FSDP (Fully Sharded Data Parallel)
+        return f"""# PyTorch FSDP (Fully Sharded Data Parallel)
 # Best for: 7B-70B models on multi-GPU
 
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
@@ -95,10 +95,10 @@ fsdp_config = dict(
 model = FSDP(model, **fsdp_config)
 
 # Launch: torchrun --nproc_per_node={gpus_per_node} train.py
-'''
+"""
 
     elif action == "accelerate":
-        return f'''# HuggingFace Accelerate (EASIEST!)
+        return f"""# HuggingFace Accelerate (EASIEST!)
 # Automatically handles: DDP, FSDP, DeepSpeed, Multi-node
 
 # 1. Install
@@ -125,10 +125,10 @@ accelerate launch --num_processes={nodes * gpus_per_node} train.py
 # Multi-node launch
 accelerate launch --num_machines={nodes} --num_processes={gpus_per_node} \\
   --machine_rank=$RANK --main_process_ip=node0 train.py
-'''
+"""
 
     elif action == "torchrun":
-        return f'''# torchrun (PyTorch native launcher)
+        return f"""# torchrun (PyTorch native launcher)
 
 # Single node, multi-GPU
 torchrun --nproc_per_node={gpus_per_node} train.py
@@ -141,10 +141,10 @@ torchrun --nproc_per_node={gpus_per_node} --nnodes={nodes} \\
 # On node 1:
 torchrun --nproc_per_node={gpus_per_node} --nnodes={nodes} \\
   --node_rank=1 --master_addr=node0 --master_port=29500 train.py
-'''
+"""
 
     elif action == "nccl":
-        return '''# NCCL Environment Variables (for debugging/tuning)
+        return """# NCCL Environment Variables (for debugging/tuning)
 
 # Basic debugging
 export NCCL_DEBUG=INFO
@@ -161,10 +161,10 @@ export NCCL_TIMEOUT=1800          # 30 minutes
 # For cloud/firewall issues
 export NCCL_SOCKET_IFNAME=eth0
 export NCCL_IB_HCA=mlx5
-'''
+"""
 
     elif action == "config_multi_node":
-        return f'''# Multi-Node Configuration
+        return f"""# Multi-Node Configuration
 
 # hostfile.txt (for DeepSpeed)
 node0 slots={gpus_per_node}
@@ -181,10 +181,10 @@ ssh-copy-id node1
 # - High bandwidth between nodes (25Gbps+)
 # - Low latency (<1ms)
 # - Open ports: 29500 (master), NCCL ports
-'''
+"""
 
     elif action == "config_multi_gpu":
-        return f'''# Multi-GPU (Single Node) Configuration
+        return f"""# Multi-GPU (Single Node) Configuration
 # Simpler than multi-node - just set devices!
 
 # Option 1: Environment variable
@@ -199,7 +199,7 @@ torchrun --nproc_per_node={gpus_per_node} train.py
 
 # Verify
 python -c "import torch; print(torch.cuda.device_count())"
-'''
+"""
 
     elif action == "benchmark":
         return f"""

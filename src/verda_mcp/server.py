@@ -2516,42 +2516,49 @@ async def model_size_guide() -> str:
 
 try:
     from .model_hub import model_hub as _model_hub
+
     MODEL_HUB_AVAILABLE = True
 except ImportError:
     MODEL_HUB_AVAILABLE = False
 
 try:
     from .dataset_tools import dataset_tools as _dataset_tools
+
     DATASET_TOOLS_AVAILABLE = True
 except ImportError:
     DATASET_TOOLS_AVAILABLE = False
 
 try:
     from .notifications import notifications as _notifications
+
     NOTIFICATIONS_AVAILABLE = True
 except ImportError:
     NOTIFICATIONS_AVAILABLE = False
 
 try:
     from .cost_analytics import cost_analytics as _cost_analytics
+
     COST_ANALYTICS_AVAILABLE = True
 except ImportError:
     COST_ANALYTICS_AVAILABLE = False
 
 try:
     from .training_templates import training_templates as _training_templates
+
     TRAINING_TEMPLATES_AVAILABLE = True
 except ImportError:
     TRAINING_TEMPLATES_AVAILABLE = False
 
 try:
     from .distributed_training import distributed_training as _distributed_training
+
     DISTRIBUTED_AVAILABLE = True
 except ImportError:
     DISTRIBUTED_AVAILABLE = False
 
 try:
     from .live_dashboard import live_dashboard as _live_dashboard
+
     DASHBOARD_AVAILABLE = True
 except ImportError:
     DASHBOARD_AVAILABLE = False
@@ -2752,6 +2759,7 @@ async def dashboard(action: str = "generate", theme: str = "dark") -> str:
 
 try:
     from .api_server import dashboard_api as _dashboard_api
+
     DASHBOARD_API_AVAILABLE = True
 except ImportError:
     DASHBOARD_API_AVAILABLE = False
@@ -2914,9 +2922,19 @@ def main():
     perf_advisor_tools = 9 if PERF_ADVISOR_AVAILABLE else 0
     enterprise_tools = enterprise_count  # 7 mega-tools bundling 84 functions
     total = (
-        base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools
-        + spot_tools + training_tools + smart_deployer_tools + gpu_optimizer_tools
-        + live_data_tools + advanced_tools + testing_tools + perf_advisor_tools
+        base_tools
+        + ssh_tools
+        + gdrive_tools
+        + watchdog_tools
+        + extended_tools
+        + spot_tools
+        + training_tools
+        + smart_deployer_tools
+        + gpu_optimizer_tools
+        + live_data_tools
+        + advanced_tools
+        + testing_tools
+        + perf_advisor_tools
         + enterprise_tools
     )
 

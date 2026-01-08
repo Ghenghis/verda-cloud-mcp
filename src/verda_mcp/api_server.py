@@ -20,6 +20,7 @@ try:
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import FileResponse, HTMLResponse
     from pydantic import BaseModel
+
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
@@ -34,8 +35,10 @@ logger = logging.getLogger(__name__)
 # Pydantic Models for API
 # =============================================================================
 
+
 class ProviderConfig(BaseModel):
     """Provider configuration model."""
+
     verda_enabled: bool = True
     verda_url: str = "https://api.verda.ai"
     verda_location: str = "FIN-01"
@@ -49,6 +52,7 @@ class ProviderConfig(BaseModel):
 
 class ToolsConfig(BaseModel):
     """Tool toggles configuration."""
+
     instance_management: bool = True
     volume_management: bool = True
     ssh_remote: bool = True
@@ -65,6 +69,7 @@ class ToolsConfig(BaseModel):
 
 class TrainingConfig(BaseModel):
     """Training/fine-tuning configuration."""
+
     learning_rate: str = "2e-5"
     batch_size: int = 4
     epochs: int = 3
@@ -81,6 +86,7 @@ class TrainingConfig(BaseModel):
 
 class AlertsConfig(BaseModel):
     """Notifications configuration."""
+
     discord_enabled: bool = False
     discord_webhook: str = ""
     slack_enabled: bool = False
@@ -97,6 +103,7 @@ class AlertsConfig(BaseModel):
 
 class BudgetConfig(BaseModel):
     """Budget and API settings."""
+
     monthly_budget: float = 500.0
     daily_limit: float = 50.0
     alert_at_percent: int = 70
@@ -107,6 +114,7 @@ class BudgetConfig(BaseModel):
 
 class DashboardSettings(BaseModel):
     """Complete dashboard settings."""
+
     providers: ProviderConfig = ProviderConfig()
     tools: ToolsConfig = ToolsConfig()
     training: TrainingConfig = TrainingConfig()
@@ -116,6 +124,7 @@ class DashboardSettings(BaseModel):
 
 class GPUMetrics(BaseModel):
     """GPU metrics model."""
+
     gpu_id: int
     name: str = "B300"
     utilization: int = 0
@@ -126,6 +135,7 @@ class GPUMetrics(BaseModel):
 
 class TrainingStatus(BaseModel):
     """Training status model."""
+
     is_running: bool = False
     current_step: int = 0
     total_steps: int = 0
@@ -140,6 +150,7 @@ class TrainingStatus(BaseModel):
 
 class ConnectionStatus(BaseModel):
     """Connection status model."""
+
     connected: bool = False
     api_url: str = ""
     location: str = ""
@@ -150,6 +161,7 @@ class ConnectionStatus(BaseModel):
 # =============================================================================
 # WebSocket Connection Manager
 # =============================================================================
+
 
 class ConnectionManager:
     """Manages WebSocket connections for real-time updates."""
@@ -187,6 +199,7 @@ class ConnectionManager:
 # =============================================================================
 # Dashboard State (in-memory + persisted)
 # =============================================================================
+
 
 class DashboardState:
     """Manages dashboard state with persistence."""
@@ -246,11 +259,7 @@ class DashboardState:
 
     def add_log(self, level: str, message: str):
         """Add a log entry."""
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            "level": level,
-            "message": message
-        }
+        entry = {"timestamp": datetime.now().isoformat(), "level": level, "message": message}
         self.logs.insert(0, entry)
         if len(self.logs) > 100:
             self.logs = self.logs[:100]
@@ -260,6 +269,7 @@ class DashboardState:
 # =============================================================================
 # FastAPI Application
 # =============================================================================
+
 
 def create_app() -> "FastAPI":
     """Create and configure the FastAPI application."""
@@ -308,14 +318,14 @@ def create_app() -> "FastAPI":
             total_epochs=3,
             eta_seconds=8100,
             model_name="LLaMA 3 8B",
-            dataset_name="alpaca-52k"
+            dataset_name="alpaca-52k",
         )
         state.connection_status = ConnectionStatus(
             connected=True,
             api_url="api.verda.ai",
             location="FIN-01",
             instance_type="4x B300 SPOT",
-            instance_id="demo-instance"
+            instance_id="demo-instance",
         )
         state.session_cost = 12.45
         state.session_saved = 37.35
@@ -427,6 +437,7 @@ def create_app() -> "FastAPI":
         """Refresh GPU metrics (trigger SSH nvidia-smi)."""
         # In production, this would SSH to instance and run nvidia-smi
         import random
+
         for gpu in state.gpu_metrics:
             gpu.utilization = random.randint(90, 98)
             gpu.temperature = random.randint(68, 76)
@@ -483,16 +494,18 @@ def create_app() -> "FastAPI":
         await manager.connect(websocket)
         try:
             # Send initial state
-            await websocket.send_json({
-                "type": "initial_state",
-                "data": {
-                    "gpus": [g.model_dump() for g in state.gpu_metrics],
-                    "training": state.training_status.model_dump(),
-                    "connection": state.connection_status.model_dump(),
-                    "session_cost": state.session_cost,
-                    "session_saved": state.session_saved,
+            await websocket.send_json(
+                {
+                    "type": "initial_state",
+                    "data": {
+                        "gpus": [g.model_dump() for g in state.gpu_metrics],
+                        "training": state.training_status.model_dump(),
+                        "connection": state.connection_status.model_dump(),
+                        "session_cost": state.session_cost,
+                        "session_saved": state.session_saved,
+                    },
                 }
-            })
+            )
 
             # Listen for messages
             while True:
@@ -615,7 +628,7 @@ def find_available_port(start_port: int = 8765, max_attempts: int = 50) -> int:
     # Strategy 4: Let OS assign a random available port
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('0.0.0.0', 0))
+            s.bind(("0.0.0.0", 0))
             return s.getsockname()[1]
     except Exception:
         pass
