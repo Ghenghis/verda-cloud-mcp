@@ -1,6 +1,6 @@
 [project]
 name = "verda-cloud-mcp"
-version = "2.0.0"
+version = "2.1.0"
 description = "Ultimate MCP server for Verda Cloud GPU management - 78 tools, spot optimization, training automation"
 readme = "README.md"
 license = {text = "MIT"}

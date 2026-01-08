@@ -1579,6 +1579,108 @@ async def backup_checkpoint_to_gdrive(
 
 
 # =============================================================================
+# Smart Deployer (Fail-Safes, Best Deals, Auto-Recovery)
+# =============================================================================
+
+try:
+    from .smart_deployer import (
+        find_best_deals_now,
+        find_power_deals_now,
+        deploy_with_all_failsafes,
+        show_available_now,
+    )
+    SMART_DEPLOYER_AVAILABLE = True
+except ImportError:
+    SMART_DEPLOYER_AVAILABLE = False
+
+
+@mcp.tool()
+async def best_deals_now(budget: float = 5.0, min_vram: int = 48) -> str:
+    """Find BEST DEALS available RIGHT NOW with real-time availability check.
+
+    Scans all GPUs across all locations and ranks by value (power/cost).
+    Shows multi-GPU spot options that beat single on-demand!
+
+    Args:
+        budget: Maximum hourly budget in USD.
+        min_vram: Minimum VRAM required in GB.
+
+    Returns:
+        Ranked list of best available deals.
+    """
+    if not SMART_DEPLOYER_AVAILABLE:
+        return "❌ Smart deployer not available."
+    return await find_best_deals_now(budget, min_vram)
+
+
+@mcp.tool()
+async def power_deals_now(reference_gpu: str = "B300", reference_count: int = 1) -> str:
+    """Find configs with MORE POWER for SAME or LESS cost.
+
+    Compares multi-GPU spot to single on-demand.
+    Example: 4x B200 spot might give 3x power for same price as 1x B300!
+
+    Args:
+        reference_gpu: GPU to compare against.
+        reference_count: Number of reference GPUs.
+
+    Returns:
+        List of better power deals.
+    """
+    if not SMART_DEPLOYER_AVAILABLE:
+        return "❌ Smart deployer not available."
+    return await find_power_deals_now(reference_gpu, reference_count)
+
+
+@mcp.tool()
+async def deploy_failsafe(
+    gpu_type: str = "A6000",
+    gpu_count: int = 1,
+    prefer_spot: bool = True,
+    volume_id: str = "",
+    script_id: str = "",
+) -> str:
+    """Deploy with COMPREHENSIVE FAIL-SAFES and backup plans.
+
+    FAIL-SAFE LAYERS:
+    1. Check availability before deploying
+    2. Try primary location, fall back to others
+    3. If spot fails, auto-fallback to on-demand
+    4. Retry failed deployments (3 attempts)
+    5. Verify deployment matches request
+    6. Start health monitoring
+    7. Eviction detection with auto-recovery
+
+    Args:
+        gpu_type: GPU type (A6000, B300, H100, etc.).
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+        prefer_spot: Try spot first (default: True).
+        volume_id: Volume to attach (optional).
+        script_id: Startup script (optional).
+
+    Returns:
+        Deployment result with instance info.
+    """
+    if not SMART_DEPLOYER_AVAILABLE:
+        return "❌ Smart deployer not available."
+    return await deploy_with_all_failsafes(gpu_type, gpu_count, prefer_spot, volume_id, script_id)
+
+
+@mcp.tool()
+async def available_now() -> str:
+    """Show ALL GPUs available RIGHT NOW across all locations.
+
+    Real-time scan of spot and on-demand availability.
+
+    Returns:
+        Complete availability matrix.
+    """
+    if not SMART_DEPLOYER_AVAILABLE:
+        return "❌ Smart deployer not available."
+    return await show_available_now()
+
+
+# =============================================================================
 # GPU Optimizer (Multi-GPU Spot Comparisons, Training Time Estimates)
 # =============================================================================
 
@@ -2047,6 +2149,11 @@ def main():
     else:
         features.append("❌ Training tools not available")
     
+    if SMART_DEPLOYER_AVAILABLE:
+        features.append("✅ Smart Deployer (4 tools): Fail-Safes, Best Deals, Auto-Recovery")
+    else:
+        features.append("❌ Smart deployer not available")
+    
     if GPU_OPTIMIZER_AVAILABLE:
         features.append("✅ GPU Optimizer (4 tools): Multi-GPU Spot Comparisons, Training Estimates")
     else:
@@ -2078,11 +2185,12 @@ def main():
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
     training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
+    smart_deployer_tools = 4 if SMART_DEPLOYER_AVAILABLE else 0  # best_deals, power_deals, deploy_failsafe, available_now
     gpu_optimizer_tools = 4 if GPU_OPTIMIZER_AVAILABLE else 0
     live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
     advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + gpu_optimizer_tools + live_data_tools + advanced_tools + testing_tools
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + smart_deployer_tools + gpu_optimizer_tools + live_data_tools + advanced_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)

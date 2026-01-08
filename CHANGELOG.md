@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-01-07
+
+### 🛡️ Smart Deployer - 7-Layer Fail-Safe System
+
+#### Smart Deployer (4 new tools)
+- `best_deals_now` - Find best deals RIGHT NOW with real-time availability check
+- `power_deals_now` - Find MORE POWER for SAME/LESS cost (multi-GPU spot vs on-demand)
+- `deploy_failsafe` - **RECOMMENDED** - Deploy with ALL 7 fail-safe layers
+- `available_now` - Show ALL GPUs available across all locations in real-time
+
+#### 7 Layers of Fail-Safe Protection
+1. **Pre-Flight Check** - Check availability BEFORE deploying
+2. **Location Fallback** - Try all locations (FIN-01, FIN-02, FIN-03)
+3. **Mode Fallback** - Spot → On-Demand auto-switch
+4. **Retry Logic** - 3 retry attempts with 10-second delays
+5. **Deployment Verification** - Confirm GPU type matches request
+6. **Health Monitoring** - Continuous checks every 60 seconds
+7. **Eviction & Crash Recovery** - Auto-detect and recover
+
+#### Multi-GPU Spot Power Deals
+- Compare 4x B300 SPOT ($4.96/hr) vs 1x B300 On-Demand ($4.95/hr) - 4x power!
+- Find configurations with MORE power for SAME or LESS cost
+- Value scoring system (Power/Cost ratio)
+
+### Changed
+- Total tools: 78 → **82**
+- Updated README with comprehensive fail-safe documentation
+- Updated pyproject.toml to version 2.1.0
+
+---
+
 ## [2.0.0] - 2026-01-07
 
 ### 🚀 Major Release - Complete MCP Overhaul
