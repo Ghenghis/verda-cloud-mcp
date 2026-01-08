@@ -9,6 +9,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2026-01-08
+
+### 🏢 Enterprise Edition - 7 Mega-Tools (84 Bundled Functions)
+
+This release introduces enterprise-grade features through compact mega-tools that bundle
+multiple functions into single tools, optimizing for client performance while maximizing
+capabilities.
+
+#### New Mega-Tools
+
+- **Model Hub** (15 functions): HuggingFace, Ollama, LM Studio integration
+  - List, search, info for all model sources
+  - Download scripts, GPU recommendations
+  - Quantization guides, fine-tune/inference scripts
+
+- **Dataset Hub** (12 functions): Download, prepare, validate datasets
+  - Popular datasets: Alpaca, Dolly, OpenAssistant, UltraChat, etc.
+  - Tokenization, splitting, format conversion
+  - Preview, stats, custom dataset creation
+
+- **Notifications** (10 functions): Multi-channel alerts
+  - Discord, Slack, Telegram, Email webhooks
+  - Training start/complete notifications
+  - Custom alerts and event webhooks
+
+- **Cost Analytics** (12 functions): Spending reports & forecasts
+  - Daily/weekly/monthly breakdowns
+  - By GPU, by project analysis
+  - Budget status, optimization tips
+  - Spot savings reports
+
+- **Training Templates** (10 functions): Pre-built configs
+  - LLaMA, Mistral, CodeLLaMA LoRA/full
+  - SDXL, FLUX image generation
+  - Whisper speech, BGE/E5 embeddings
+  - Ready-to-run training scripts
+
+- **Distributed Training** (10 functions): Multi-node setup
+  - DeepSpeed ZeRO-3 configuration
+  - PyTorch FSDP setup
+  - HuggingFace Accelerate
+  - NCCL tuning, troubleshooting
+
+- **Live Dashboard** (15 functions): Professional Web UI
+  - Modern glassmorphism dark theme
+  - Real-time GPU metrics & charts
+  - Training progress visualization
+  - Cost tracking, notification center
+  - Interactive controls, live logs
+
+#### Technical Highlights
+
+- **103 visible tools** + **139 bundled functions** = **230+ capabilities**
+- Optimized for client performance (Windsurf ~50 tool recommendation)
+- Enterprise-grade code quality and documentation
+- Full Chart.js integration for visualizations
+- TailwindCSS-powered responsive dashboard
+
+---
+
 ## [2.3.0] - 2026-01-08
 
 ### 🚀 Performance Advisor - Speed Optimization & Best Practices

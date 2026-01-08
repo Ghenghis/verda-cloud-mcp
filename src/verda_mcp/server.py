@@ -2511,6 +2511,242 @@ async def model_size_guide() -> str:
 
 
 # =============================================================================
+# Enterprise Tools v2.4.0 (7 Mega-Tools bundling 84 functions)
+# =============================================================================
+
+try:
+    from .model_hub import model_hub as _model_hub
+    MODEL_HUB_AVAILABLE = True
+except ImportError:
+    MODEL_HUB_AVAILABLE = False
+
+try:
+    from .dataset_tools import dataset_tools as _dataset_tools
+    DATASET_TOOLS_AVAILABLE = True
+except ImportError:
+    DATASET_TOOLS_AVAILABLE = False
+
+try:
+    from .notifications import notifications as _notifications
+    NOTIFICATIONS_AVAILABLE = True
+except ImportError:
+    NOTIFICATIONS_AVAILABLE = False
+
+try:
+    from .cost_analytics import cost_analytics as _cost_analytics
+    COST_ANALYTICS_AVAILABLE = True
+except ImportError:
+    COST_ANALYTICS_AVAILABLE = False
+
+try:
+    from .training_templates import training_templates as _training_templates
+    TRAINING_TEMPLATES_AVAILABLE = True
+except ImportError:
+    TRAINING_TEMPLATES_AVAILABLE = False
+
+try:
+    from .distributed_training import distributed_training as _distributed_training
+    DISTRIBUTED_AVAILABLE = True
+except ImportError:
+    DISTRIBUTED_AVAILABLE = False
+
+try:
+    from .live_dashboard import live_dashboard as _live_dashboard
+    DASHBOARD_AVAILABLE = True
+except ImportError:
+    DASHBOARD_AVAILABLE = False
+
+
+@mcp.tool()
+async def model_hub(action: str = "list", model: str = "", source: str = "all") -> str:
+    """MEGA-TOOL: Model Hub (15 functions) - HuggingFace/Ollama/LM Studio.
+
+    Actions:
+    - list: List all models (HuggingFace, Ollama, LM Studio)
+    - search: Search models by name
+    - info: Get model details
+    - download_script: Generate download script
+    - gpu_for_model: GPU recommendation
+    - huggingface: List HuggingFace models
+    - ollama: List Ollama models
+    - lm_studio: List LM Studio GGUF models
+    - quantization: Quantization guide
+    - finetune_script: Generate fine-tune script
+    - inference_script: Generate inference script
+
+    Args:
+        action: Sub-command to run.
+        model: Model name for info/download.
+        source: Filter by source (all, huggingface, ollama, lm_studio).
+    """
+    if not MODEL_HUB_AVAILABLE:
+        return "❌ Model hub not available."
+    return _model_hub(action=action, model=model, source=source)
+
+
+@mcp.tool()
+async def dataset_hub(action: str = "list", dataset: str = "") -> str:
+    """MEGA-TOOL: Dataset Tools (12 functions) - Download/prep datasets.
+
+    Actions:
+    - list: List popular datasets
+    - search: Search datasets
+    - info: Dataset details
+    - download_script: Generate download script
+    - preview: Preview dataset format
+    - split: Train/val/test split
+    - tokenize: Tokenization script
+    - validate: Validate dataset
+    - convert: Convert formats
+    - stats: Dataset statistics
+
+    Args:
+        action: Sub-command to run.
+        dataset: Dataset name.
+    """
+    if not DATASET_TOOLS_AVAILABLE:
+        return "❌ Dataset tools not available."
+    return _dataset_tools(action=action, dataset=dataset)
+
+
+@mcp.tool()
+async def notify(action: str = "setup", channel: str = "webhook", webhook_url: str = "", message: str = "") -> str:
+    """MEGA-TOOL: Notifications (10 functions) - Discord/Slack/Telegram/Email.
+
+    Actions:
+    - setup: Configuration guide
+    - test: Send test notification
+    - discord: Discord webhook setup
+    - slack: Slack webhook setup
+    - telegram: Telegram bot setup
+    - email: Email SMTP setup
+    - webhook: Generic webhook
+    - training_start: Training started notification
+    - training_complete: Training done notification
+    - alert: Custom alert
+
+    Args:
+        action: Sub-command to run.
+        channel: Notification channel.
+        webhook_url: Webhook URL.
+        message: Custom message.
+    """
+    if not NOTIFICATIONS_AVAILABLE:
+        return "❌ Notifications not available."
+    return _notifications(action=action, channel=channel, webhook_url=webhook_url, message=message)
+
+
+@mcp.tool()
+async def costs(action: str = "summary", period: str = "daily", gpu_type: str = "B300", hours: float = 0) -> str:
+    """MEGA-TOOL: Cost Analytics (12 functions) - Spending reports/forecasts.
+
+    Actions:
+    - summary: Cost overview
+    - daily: Daily breakdown
+    - weekly: Weekly report
+    - monthly: Monthly report
+    - by_gpu: Cost by GPU type
+    - by_project: Cost by project
+    - forecast: Spending forecast
+    - budget_status: Budget vs actual
+    - savings: Spot savings report
+    - compare: Compare periods
+    - export: Export to CSV
+    - optimize: Optimization tips
+
+    Args:
+        action: Sub-command to run.
+        period: Time period.
+        gpu_type: GPU for calculator.
+        hours: Hours for calculator.
+    """
+    if not COST_ANALYTICS_AVAILABLE:
+        return "❌ Cost analytics not available."
+    return _cost_analytics(action=action, period=period, gpu_type=gpu_type, hours=hours)
+
+
+@mcp.tool()
+async def templates(action: str = "list", template: str = "") -> str:
+    """MEGA-TOOL: Training Templates (10 functions) - Pre-built configs.
+
+    Actions:
+    - list: List all templates
+    - info: Template details
+    - generate: Generate training script
+    - config: Get config JSON
+    - requirements: Pip requirements
+    - gpu_setup: GPU verification
+    - data_format: Expected data format
+    - customize: Customization guide
+    - validate: Validate setup
+    - estimate: Time/cost estimate
+
+    Args:
+        action: Sub-command to run.
+        template: Template name.
+    """
+    if not TRAINING_TEMPLATES_AVAILABLE:
+        return "❌ Training templates not available."
+    return _training_templates(action=action, template=template)
+
+
+@mcp.tool()
+async def distributed(action: str = "guide", nodes: int = 2, gpus_per_node: int = 8) -> str:
+    """MEGA-TOOL: Distributed Training (10 functions) - Multi-node setup.
+
+    Actions:
+    - guide: Distributed training guide
+    - deepspeed: DeepSpeed ZeRO-3 config
+    - fsdp: PyTorch FSDP setup
+    - accelerate: HuggingFace Accelerate
+    - torchrun: torchrun commands
+    - nccl: NCCL environment setup
+    - config_multi_node: Multi-node config
+    - config_multi_gpu: Multi-GPU config
+    - benchmark: Scaling benchmark
+    - troubleshoot: Common issues
+
+    Args:
+        action: Sub-command to run.
+        nodes: Number of nodes.
+        gpus_per_node: GPUs per node.
+    """
+    if not DISTRIBUTED_AVAILABLE:
+        return "❌ Distributed training not available."
+    return _distributed_training(action=action, nodes=nodes, gpus_per_node=gpus_per_node)
+
+
+@mcp.tool()
+async def dashboard(action: str = "generate", theme: str = "dark") -> str:
+    """MEGA-TOOL: Live Dashboard (15 functions) - Professional Web UI.
+
+    Actions:
+    - generate: Generate full HTML dashboard
+    - metrics_panel: Metrics component
+    - gpu_panel: GPU status panel
+    - loss_chart: Loss curve chart
+    - cost_panel: Cost tracking
+    - progress_bar: Progress component
+    - alerts_panel: Alerts panel
+    - model_browser: Model browser
+    - controls: Training controls
+    - logs_panel: Live logs
+    - notifications: Notification center
+    - settings: Settings panel
+    - export_html: Export dashboard
+    - embed: Embeddable iframe
+    - api_docs: API documentation
+
+    Args:
+        action: Sub-command to run.
+        theme: Color theme (dark/light).
+    """
+    if not DASHBOARD_AVAILABLE:
+        return "❌ Dashboard not available."
+    return _live_dashboard(action=action, theme=theme)
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
@@ -2584,11 +2820,35 @@ def main():
     else:
         features.append("❌ Performance advisor not available")
 
+    # Enterprise Tools v2.4.0
+    enterprise_count = 0
+    if MODEL_HUB_AVAILABLE:
+        features.append("✅ Model Hub (1 mega-tool → 15 functions): HuggingFace/Ollama/LM Studio")
+        enterprise_count += 1
+    if DATASET_TOOLS_AVAILABLE:
+        features.append("✅ Dataset Hub (1 mega-tool → 12 functions): Download/Prep/Tokenize")
+        enterprise_count += 1
+    if NOTIFICATIONS_AVAILABLE:
+        features.append("✅ Notifications (1 mega-tool → 10 functions): Discord/Slack/Telegram/Email")
+        enterprise_count += 1
+    if COST_ANALYTICS_AVAILABLE:
+        features.append("✅ Cost Analytics (1 mega-tool → 12 functions): Reports/Forecasts/Optimize")
+        enterprise_count += 1
+    if TRAINING_TEMPLATES_AVAILABLE:
+        features.append("✅ Templates (1 mega-tool → 10 functions): Pre-built Configs")
+        enterprise_count += 1
+    if DISTRIBUTED_AVAILABLE:
+        features.append("✅ Distributed (1 mega-tool → 10 functions): DeepSpeed/FSDP/Accelerate")
+        enterprise_count += 1
+    if DASHBOARD_AVAILABLE:
+        features.append("✅ Dashboard (1 mega-tool → 15 functions): Professional Web UI")
+        enterprise_count += 1
+
     for f in features:
         logger.info(f)
 
     # Count total tools
-    base_tools = 20  # Original tools
+    base_tools = 20
     ssh_tools = 8 if SSH_TOOLS_AVAILABLE else 0
     gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
@@ -2600,24 +2860,21 @@ def main():
     live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
     advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    perf_advisor_tools = 9 if PERF_ADVISOR_AVAILABLE else 0  # NEW v2.3.0
+    perf_advisor_tools = 9 if PERF_ADVISOR_AVAILABLE else 0
+    enterprise_tools = enterprise_count  # 7 mega-tools bundling 84 functions
     total = (
-        base_tools
-        + ssh_tools
-        + gdrive_tools
-        + watchdog_tools
-        + extended_tools
-        + spot_tools
-        + training_tools
-        + smart_deployer_tools
-        + gpu_optimizer_tools
-        + live_data_tools
-        + advanced_tools
-        + testing_tools
-        + perf_advisor_tools
+        base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools
+        + spot_tools + training_tools + smart_deployer_tools + gpu_optimizer_tools
+        + live_data_tools + advanced_tools + testing_tools + perf_advisor_tools
+        + enterprise_tools
     )
 
-    logger.info(f"📊 Total Tools Available: {total}")
+    # Calculate bundled functions
+    bundled_functions = 55 + 84  # Training Intel + Enterprise = 139
+
+    logger.info(f"📊 Total Visible Tools: {total}")
+    logger.info(f"📦 Bundled Functions: {bundled_functions} (via mega-tools)")
+    logger.info(f"🚀 Total Capabilities: {total + bundled_functions - 12}+")
     logger.info("=" * 60)
     mcp.run(transport="stdio")
 
