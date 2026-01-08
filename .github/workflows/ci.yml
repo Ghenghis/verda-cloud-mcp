@@ -31,8 +31,8 @@ jobs:
 
       - name: Run linting
         run: |
-          uv run ruff check src/
-          uv run ruff format --check src/
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
 
       - name: Run type checking
         run: uv run mypy src/ --ignore-missing-imports || true
@@ -67,8 +67,14 @@ jobs:
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
 
+      - name: Install dashboard dependencies
+        run: uv pip install fastapi uvicorn websockets pydantic
+
       - name: Run Playwright E2E tests
         run: uv run pytest tests/test_e2e_playwright.py -v --tb=short || true
+
+      - name: Run Dashboard UI tests
+        run: uv run pytest tests/test_dashboard_ui.py -v --tb=short || true
 
       - name: Run integration test suite
         run: uv run python tests/test_playwright_integration.py || true
