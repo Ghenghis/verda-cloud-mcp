@@ -1413,6 +1413,172 @@ async def end_training_session() -> str:
 
 
 # =============================================================================
+# Training Tools (Checkpoints, Scripts, Alerts, Notifications)
+# =============================================================================
+
+try:
+    from .training_tools import (
+        check_account_balance,
+        generate_checkpoint_script,
+        generate_startup_script,
+        set_cost_alert,
+        send_training_notification,
+        upload_checkpoint_to_gdrive,
+        list_available_frameworks,
+    )
+    TRAINING_TOOLS_AVAILABLE = True
+except ImportError:
+    TRAINING_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def check_balance() -> str:
+    """Check Verda account balance before deploying.
+
+    Shows current balance, usage, and whether you have sufficient funds.
+    ALWAYS check balance before deploying expensive multi-GPU instances!
+
+    Returns:
+        Account balance and usage information.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await check_account_balance()
+
+
+@mcp.tool()
+async def create_checkpoint_script(
+    framework: str = "huggingface",
+    checkpoint_dir: str = "/workspace/checkpoints",
+    checkpoint_minutes: int = 10,
+    model_name: str = "my_model",
+) -> str:
+    """Generate a training script with automatic 10-minute checkpoints.
+
+    CRITICAL for spot instances! This script:
+    - Saves checkpoints every 10 minutes (configurable)
+    - Auto-resumes from the latest checkpoint
+    - Handles spot eviction gracefully
+
+    Args:
+        framework: Training framework (huggingface, pytorch, lightning, llama, stable_diffusion).
+        checkpoint_dir: Directory to save checkpoints.
+        checkpoint_minutes: Checkpoint interval in minutes (default: 10).
+        model_name: Name for your model.
+
+    Returns:
+        Complete Python training script with checkpoint support.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await generate_checkpoint_script(framework, checkpoint_dir, checkpoint_minutes, model_name)
+
+
+@mcp.tool()
+async def create_startup_script(framework: str = "huggingface") -> str:
+    """Generate a Verda startup script for your framework.
+
+    Creates a bash script that:
+    - Installs all required packages
+    - Sets up the workspace
+    - Verifies GPU access
+
+    Args:
+        framework: Framework to set up (huggingface, pytorch, lightning, llama, stable_diffusion).
+
+    Returns:
+        Bash startup script ready to use with Verda.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await generate_startup_script(framework)
+
+
+@mcp.tool()
+async def list_frameworks() -> str:
+    """List all available framework templates.
+
+    Shows all supported frameworks with descriptions.
+    Use these with create_checkpoint_script and create_startup_script.
+
+    Returns:
+        List of frameworks and their descriptions.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await list_available_frameworks()
+
+
+@mcp.tool()
+async def set_training_cost_alert(
+    threshold_usd: float,
+    webhook_url: str = "",
+) -> str:
+    """Set a cost alert to warn when training costs exceed a threshold.
+
+    Get notified when your training costs go over the specified amount.
+
+    Args:
+        threshold_usd: Alert when cost exceeds this amount in USD.
+        webhook_url: Optional webhook URL for notifications.
+
+    Returns:
+        Confirmation of alert setup.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await set_cost_alert(threshold_usd, webhook_url)
+
+
+@mcp.tool()
+async def notify_training_event(
+    webhook_url: str,
+    message: str,
+    event_type: str = "training_update",
+) -> str:
+    """Send a training notification via webhook.
+
+    Use this to notify external services about training events
+    (start, complete, checkpoint saved, error, etc.).
+
+    Args:
+        webhook_url: Webhook URL to send notification to.
+        message: Notification message.
+        event_type: Type of event (training_start, checkpoint, training_complete, error).
+
+    Returns:
+        Notification status.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await send_training_notification(webhook_url, message, event_type)
+
+
+@mcp.tool()
+async def backup_checkpoint_to_gdrive(
+    instance_ip: str,
+    checkpoint_path: str = "/workspace/checkpoints",
+    gdrive_folder: str = "verda-checkpoints",
+) -> str:
+    """Upload checkpoints from instance to Google Drive.
+
+    Backup your training checkpoints to Google Drive for safety.
+    Requires rclone configured on the instance.
+
+    Args:
+        instance_ip: IP address of the instance.
+        checkpoint_path: Path to checkpoint on instance.
+        gdrive_folder: Google Drive folder name.
+
+    Returns:
+        Upload status and instructions.
+    """
+    if not TRAINING_TOOLS_AVAILABLE:
+        return "❌ Training tools not available."
+    return await upload_checkpoint_to_gdrive(instance_ip, checkpoint_path, gdrive_folder)
+
+
+# =============================================================================
 # Testing & Diagnostics Tools (NEW!)
 # =============================================================================
 
@@ -1525,6 +1691,11 @@ def main():
     else:
         features.append("❌ Spot manager not available")
     
+    if TRAINING_TOOLS_AVAILABLE:
+        features.append("✅ Training Tools (7 tools): Checkpoints, Scripts, Alerts, Notifications")
+    else:
+        features.append("❌ Training tools not available")
+    
     if TESTING_TOOLS_AVAILABLE:
         features.append("✅ Testing Tools (3 tools): Self-diagnostics")
     else:
@@ -1539,9 +1710,10 @@ def main():
     gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
-    spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0  # spot savings, smart deploy, switch x2, status, end
+    spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
+    training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0  # balance, checkpoint script, startup script, frameworks, alert, notify, gdrive backup
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + testing_tools
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
