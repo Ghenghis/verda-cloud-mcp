@@ -1273,6 +1273,146 @@ async def watchdog_check_now(instance_ip: str) -> str:
 
 
 # =============================================================================
+# Spot Instance Manager (Auto-Switch, Failover, Savings!)
+# =============================================================================
+
+try:
+    from .spot_manager import (
+        compare_spot_vs_ondemand,
+        smart_deploy_instance,
+        switch_instance_mode,
+        get_session_status,
+        stop_session_monitoring,
+        GPU_PRICING_FULL,
+    )
+    SPOT_MANAGER_AVAILABLE = True
+except ImportError:
+    SPOT_MANAGER_AVAILABLE = False
+
+
+@mcp.tool()
+async def spot_savings_calculator(
+    gpu_type: str = "B300",
+    gpu_count: int = 1,
+    hours: float = 20,
+) -> str:
+    """Compare SPOT vs On-Demand pricing and calculate savings.
+
+    Shows how much you save using spot instances (typically 75% savings!).
+    ALWAYS recommends SPOT with 10-minute checkpoints for training.
+
+    Args:
+        gpu_type: GPU type (B300, A6000, H100, etc.).
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+        hours: Expected training hours.
+
+    Returns:
+        Detailed comparison with savings calculation.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await compare_spot_vs_ondemand(gpu_type, gpu_count, hours)
+
+
+@mcp.tool()
+async def smart_deploy(
+    gpu_type: str = "B300",
+    gpu_count: int = 1,
+    prefer_spot: bool = True,
+    auto_failover: bool = True,
+    checkpoint_minutes: int = 10,
+    volume_id: str = "",
+    script_id: str = "",
+) -> str:
+    """Smart deploy with SPOT preference and auto-failover to On-Demand.
+
+    RECOMMENDED deployment method! Automatically:
+    1. Tries SPOT first (75% savings!)
+    2. Falls back to On-Demand if spot unavailable
+    3. Monitors for eviction and auto-recovers
+    4. Reminds about checkpoint requirements
+
+    Args:
+        gpu_type: GPU type (B300, A6000, etc.).
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+        prefer_spot: Try spot first (default: True - RECOMMENDED!).
+        auto_failover: Auto-switch to on-demand if spot fails (default: True).
+        checkpoint_minutes: Checkpoint interval (default: 10 - CRITICAL for spot!).
+        volume_id: Volume ID to attach (optional).
+        script_id: Startup script ID (optional).
+
+    Returns:
+        Deployment result with instance info and savings.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await smart_deploy_instance(
+        gpu_type, gpu_count, prefer_spot, auto_failover,
+        checkpoint_minutes, volume_id, script_id
+    )
+
+
+@mcp.tool()
+async def switch_to_spot() -> str:
+    """Switch current training from On-Demand to SPOT to save money.
+
+    Creates new SPOT instance and provides instructions to resume training.
+    Use this when spot becomes available during an on-demand session.
+
+    Returns:
+        New instance info and resume instructions.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await switch_instance_mode(to_spot=True)
+
+
+@mcp.tool()
+async def switch_to_ondemand() -> str:
+    """Switch current training from SPOT to On-Demand for stability.
+
+    Creates new On-Demand instance and provides instructions to resume training.
+    Use this if you need guaranteed uptime and don't want eviction risk.
+
+    Returns:
+        New instance info and resume instructions.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await switch_instance_mode(to_spot=False)
+
+
+@mcp.tool()
+async def training_session_status() -> str:
+    """Get current training session status.
+
+    Shows instance mode (spot/on-demand), duration, cost, checkpoints,
+    and eviction history.
+
+    Returns:
+        Detailed session status report.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await get_session_status()
+
+
+@mcp.tool()
+async def end_training_session() -> str:
+    """End current training session and stop monitoring.
+
+    Call this when training is complete to stop eviction monitoring
+    and finalize the session.
+
+    Returns:
+        Confirmation message.
+    """
+    if not SPOT_MANAGER_AVAILABLE:
+        return "❌ Spot manager not available."
+    return await stop_session_monitoring()
+
+
+# =============================================================================
 # Testing & Diagnostics Tools (NEW!)
 # =============================================================================
 
@@ -1380,6 +1520,11 @@ def main():
     else:
         features.append("❌ Extended tools not available")
     
+    if SPOT_MANAGER_AVAILABLE:
+        features.append("✅ Spot Manager (6 tools): Auto-Switch, Failover, 75% Savings!")
+    else:
+        features.append("❌ Spot manager not available")
+    
     if TESTING_TOOLS_AVAILABLE:
         features.append("✅ Testing Tools (3 tools): Self-diagnostics")
     else:
@@ -1393,9 +1538,10 @@ def main():
     ssh_tools = 8 if SSH_TOOLS_AVAILABLE else 0
     gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
-    extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0  # +2: list_gpus, recommend_gpu
+    extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
+    spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0  # spot savings, smart deploy, switch x2, status, end
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + testing_tools
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
