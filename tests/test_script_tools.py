@@ -26,8 +26,8 @@ async def test_list_scripts():
     return scripts
 
 
-async def test_get_script_by_id(script_id: str):
-    """Test getting a script by ID."""
+async def get_script_by_id(script_id: str):
+    """Get a script by ID (helper function, not a pytest test)."""
     print("\n" + "=" * 60)
     print(f"TEST: get_script_by_id({script_id})")
     print("=" * 60)
@@ -44,8 +44,8 @@ async def test_get_script_by_id(script_id: str):
     return script
 
 
-async def test_get_current_script_for_instance(instance_id: str):
-    """Test getting the startup script for an instance."""
+async def get_current_script_for_instance(instance_id: str):
+    """Get the startup script for an instance (helper function)."""
     print("\n" + "=" * 60)
     print(f"TEST: get_current_script({instance_id})")
     print("=" * 60)
@@ -71,8 +71,8 @@ async def test_get_current_script_for_instance(instance_id: str):
     return script
 
 
-async def test_create_script():
-    """Test creating a new script."""
+async def create_script():
+    """Create a new script (helper function)."""
     print("\n" + "=" * 60)
     print("TEST: create_script")
     print("=" * 60)
@@ -94,8 +94,8 @@ date
     return script
 
 
-def test_update_config_file(script_id: str):
-    """Test updating the config file."""
+def update_config_file_helper(script_id: str):
+    """Update the config file (helper function)."""
     print("\n" + "=" * 60)
     print(f"TEST: update_config_file (setting script_id to {script_id})")
     print("=" * 60)
@@ -125,8 +125,8 @@ def test_update_config_file(script_id: str):
     return new_script_id == script_id
 
 
-async def test_list_instances():
-    """Test listing instances to find one for testing."""
+async def list_instances_helper():
+    """List instances helper function."""
     print("\n" + "=" * 60)
     print("TEST: list_instances")
     print("=" * 60)
@@ -154,18 +154,18 @@ async def main():
 
         # Test 2: Get script by ID (use the first script found)
         if scripts:
-            await test_get_script_by_id(scripts[0].id)
+            await get_script_by_id(scripts[0].id)
 
         # Test 3: List instances
-        instances = await test_list_instances()
+        instances = await list_instances_helper()
 
         # Test 4: Get current script for an instance (if any exist)
         if instances:
-            await test_get_current_script_for_instance(instances[0].id)
+            await get_current_script_for_instance(instances[0].id)
 
         # Test 5: Test config update (non-destructive - restores original)
         if scripts:
-            test_update_config_file(scripts[0].id)
+            update_config_file_helper(scripts[0].id)
 
         # Test 6: Create a new script (optional - uncomment to test)
         # new_script = await test_create_script()
