@@ -759,13 +759,404 @@ async def show_config() -> str:
 
 
 # =============================================================================
+# SSH Remote Access Tools (NEW!)
+# =============================================================================
+
+try:
+    from .ssh_tools import (
+        ssh_run_command,
+        ssh_get_gpu_status,
+        ssh_get_training_logs,
+        ssh_get_training_progress,
+        ssh_read_file,
+        ssh_write_file,
+        ssh_list_dir,
+        ssh_kill_training,
+        PARAMIKO_AVAILABLE,
+    )
+    SSH_TOOLS_AVAILABLE = PARAMIKO_AVAILABLE
+except ImportError:
+    SSH_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def remote_run_command(instance_ip: str, command: str) -> str:
+    """Run a command on a remote Verda instance via SSH.
+
+    Args:
+        instance_ip: The IP address of the instance.
+        command: The bash command to run.
+
+    Returns:
+        Command output (stdout, stderr, exit code).
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_run_command(instance_ip, command)
+
+
+@mcp.tool()
+async def remote_gpu_status(instance_ip: str) -> str:
+    """Get GPU status (nvidia-smi) from a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+
+    Returns:
+        nvidia-smi output showing GPU utilization, memory, etc.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_get_gpu_status(instance_ip)
+
+
+@mcp.tool()
+async def remote_training_logs(instance_ip: str, lines: int = 50) -> str:
+    """Get recent training logs from a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+        lines: Number of log lines to retrieve (default: 50).
+
+    Returns:
+        Recent training log output.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_get_training_logs(instance_ip, lines)
+
+
+@mcp.tool()
+async def remote_training_progress(instance_ip: str) -> str:
+    """Get comprehensive training progress from a remote instance.
+
+    Includes GPU status, training process status, recent logs, and disk space.
+
+    Args:
+        instance_ip: The IP address of the instance.
+
+    Returns:
+        Full training progress report.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_get_training_progress(instance_ip)
+
+
+@mcp.tool()
+async def remote_read_file(instance_ip: str, file_path: str, max_lines: int = 0) -> str:
+    """Read a file from a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+        file_path: Path to the file on the remote instance.
+        max_lines: If > 0, only read last N lines (like tail).
+
+    Returns:
+        File contents.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_read_file(instance_ip, file_path, max_lines if max_lines > 0 else None)
+
+
+@mcp.tool()
+async def remote_write_file(instance_ip: str, file_path: str, content: str) -> str:
+    """Write content to a file on a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+        file_path: Path to the file on the remote instance.
+        content: Content to write to the file.
+
+    Returns:
+        Success or failure message.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_write_file(instance_ip, file_path, content)
+
+
+@mcp.tool()
+async def remote_list_dir(instance_ip: str, dir_path: str) -> str:
+    """List files in a directory on a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+        dir_path: Path to the directory on the remote instance.
+
+    Returns:
+        Directory listing (ls -la output).
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_list_dir(instance_ip, dir_path)
+
+
+@mcp.tool()
+async def remote_kill_training(instance_ip: str) -> str:
+    """Kill any running training processes on a remote instance.
+
+    Args:
+        instance_ip: The IP address of the instance.
+
+    Returns:
+        Result of the kill command.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await ssh_kill_training(instance_ip)
+
+
+# =============================================================================
+# Google Drive & File Transfer Tools (NEW!)
+# =============================================================================
+
+try:
+    from .gdrive_tools import (
+        gdrive_download_to_local,
+        gdrive_download_folder_to_local,
+        transfer_local_to_verda,
+        transfer_verda_to_local,
+        auto_setup_training,
+        auto_start_training,
+        GDOWN_AVAILABLE,
+    )
+    GDRIVE_TOOLS_AVAILABLE = GDOWN_AVAILABLE
+except ImportError:
+    GDRIVE_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def gdrive_download_file(gdrive_url: str, local_path: str = "") -> str:
+    """Download a file from Google Drive to local machine.
+
+    Args:
+        gdrive_url: Google Drive URL or file ID.
+        local_path: Optional local destination path.
+
+    Returns:
+        Download status and file path.
+    """
+    if not GDRIVE_TOOLS_AVAILABLE:
+        return "❌ Google Drive tools not available. Install gdown: pip install gdown"
+    return await gdrive_download_to_local(gdrive_url, local_path if local_path else None)
+
+
+@mcp.tool()
+async def gdrive_download_folder(gdrive_url: str, local_dir: str = "") -> str:
+    """Download a folder from Google Drive to local machine.
+
+    Args:
+        gdrive_url: Google Drive folder URL or ID.
+        local_dir: Optional local destination directory.
+
+    Returns:
+        Download status and folder path.
+    """
+    if not GDRIVE_TOOLS_AVAILABLE:
+        return "❌ Google Drive tools not available. Install gdown: pip install gdown"
+    return await gdrive_download_folder_to_local(gdrive_url, local_dir if local_dir else None)
+
+
+@mcp.tool()
+async def upload_to_verda(local_path: str, instance_ip: str, remote_path: str) -> str:
+    """Upload a local file to a Verda instance via SCP.
+
+    Args:
+        local_path: Path to local file.
+        instance_ip: IP address of the Verda instance.
+        remote_path: Destination path on the instance.
+
+    Returns:
+        Upload status.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await transfer_local_to_verda(local_path, instance_ip, remote_path)
+
+
+@mcp.tool()
+async def download_from_verda(instance_ip: str, remote_path: str, local_path: str) -> str:
+    """Download a file from a Verda instance to local machine via SCP.
+
+    Args:
+        instance_ip: IP address of the Verda instance.
+        remote_path: Path to file on the instance.
+        local_path: Local destination path.
+
+    Returns:
+        Download status.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await transfer_verda_to_local(instance_ip, remote_path, local_path)
+
+
+@mcp.tool()
+async def automated_setup(instance_ip: str, gdrive_url: str) -> str:
+    """Fully automated training environment setup on Verda instance.
+
+    Performs:
+    1. Installs gdown on instance
+    2. Downloads training package from Google Drive
+    3. Extracts zip files
+    4. Installs requirements
+    5. Verifies GPU
+
+    Args:
+        instance_ip: IP address of the Verda instance.
+        gdrive_url: Google Drive folder/file URL with training package.
+
+    Returns:
+        Detailed setup status report.
+    """
+    if not SSH_TOOLS_AVAILABLE or not GDRIVE_TOOLS_AVAILABLE:
+        return "❌ Required tools not available. Install paramiko and gdown."
+    return await auto_setup_training(instance_ip, gdrive_url)
+
+
+@mcp.tool()
+async def automated_start_training(instance_ip: str, script_path: str) -> str:
+    """Start training on a Verda instance with screen session.
+
+    Starts the training script in a detached screen session for persistence.
+
+    Args:
+        instance_ip: IP address of the Verda instance.
+        script_path: Path to training script on the instance.
+
+    Returns:
+        Training start status and commands for monitoring.
+    """
+    if not SSH_TOOLS_AVAILABLE:
+        return "❌ SSH tools not available. Install paramiko: pip install paramiko"
+    return await auto_start_training(instance_ip, script_path)
+
+
+# =============================================================================
+# WatchDog Monitoring Tools (NEW!)
+# =============================================================================
+
+try:
+    from .watchdog import (
+        start_watchdog,
+        stop_watchdog,
+        get_watchdog_status,
+        get_latest_watchdog_report,
+        manual_watchdog_check,
+    )
+    WATCHDOG_AVAILABLE = True
+except ImportError:
+    WATCHDOG_AVAILABLE = False
+
+
+@mcp.tool()
+async def watchdog_enable(instance_ip: str, interval_minutes: int = 10) -> str:
+    """Enable WatchDog automatic monitoring for a Verda instance.
+
+    When enabled, WatchDog will check training status every N minutes and
+    create timestamped markdown reports automatically.
+
+    Args:
+        instance_ip: IP address of the instance to monitor.
+        interval_minutes: Check interval in minutes (default: 10).
+
+    Returns:
+        Status message confirming WatchDog is enabled.
+    """
+    if not WATCHDOG_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ WatchDog not available. Ensure SSH tools are installed."
+    return await start_watchdog(instance_ip, interval_minutes)
+
+
+@mcp.tool()
+async def watchdog_disable() -> str:
+    """Disable WatchDog automatic monitoring.
+
+    Stops the automatic monitoring and creates a summary report.
+
+    Returns:
+        Status message and summary report location.
+    """
+    if not WATCHDOG_AVAILABLE:
+        return "❌ WatchDog not available."
+    return await stop_watchdog()
+
+
+@mcp.tool()
+async def watchdog_status() -> str:
+    """Get the current WatchDog monitoring status.
+
+    Returns:
+        Current status including monitoring target and report locations.
+    """
+    if not WATCHDOG_AVAILABLE:
+        return "❌ WatchDog not available."
+    return await get_watchdog_status()
+
+
+@mcp.tool()
+async def watchdog_latest_report() -> str:
+    """Get the latest WatchDog report content.
+
+    Returns:
+        The full content of the most recent monitoring report.
+    """
+    if not WATCHDOG_AVAILABLE:
+        return "❌ WatchDog not available."
+    return await get_latest_watchdog_report()
+
+
+@mcp.tool()
+async def watchdog_check_now(instance_ip: str) -> str:
+    """Perform a manual WatchDog check (one-time, without enabling continuous monitoring).
+
+    Creates a full status report with GPU, training, logs, and disk info.
+
+    Args:
+        instance_ip: IP address of the instance to check.
+
+    Returns:
+        Full status report and saved report path.
+    """
+    if not WATCHDOG_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ WatchDog not available. Ensure SSH tools are installed."
+    return await manual_watchdog_check(instance_ip)
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
 
 def main():
     """Run the MCP server."""
-    logger.info("Starting Verda Cloud MCP Server...")
+    logger.info("=" * 60)
+    logger.info("🚀 Verda Cloud MCP Server (Enhanced Edition)")
+    logger.info("=" * 60)
+    
+    # Feature status
+    features = []
+    if SSH_TOOLS_AVAILABLE:
+        features.append("✅ SSH Remote Access (8 tools)")
+    else:
+        features.append("❌ SSH tools - install paramiko")
+    
+    if GDRIVE_TOOLS_AVAILABLE:
+        features.append("✅ Google Drive Integration (6 tools)")
+    else:
+        features.append("❌ Google Drive - install gdown")
+    
+    if WATCHDOG_AVAILABLE:
+        features.append("✅ WatchDog Monitoring (5 tools)")
+    else:
+        features.append("❌ WatchDog not available")
+    
+    for f in features:
+        logger.info(f)
+    
+    logger.info("=" * 60)
     mcp.run(transport="stdio")
 
 
