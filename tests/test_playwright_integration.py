@@ -12,7 +12,6 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any
 
 import pytest
 
@@ -122,7 +121,6 @@ class VerdaMCPTestSuite:
         """Test all 87 tools are properly defined."""
         start = datetime.now()
         try:
-            from verda_mcp.server import mcp
 
             # Count tools by checking registered handlers
             tool_count = 87  # Expected count

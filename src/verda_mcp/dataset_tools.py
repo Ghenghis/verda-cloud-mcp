@@ -101,4 +101,4 @@ import json
 with open("data.json") as f: data = json.load(f)
 dataset = Dataset.from_list(data)'''
 
-    return f"Actions: list, search, info, download_script, preview, split, tokenize, validate, convert, stats, custom"
+    return "Actions: list, search, info, download_script, preview, split, tokenize, validate, convert, stats, custom"

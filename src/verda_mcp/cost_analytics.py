@@ -3,7 +3,6 @@ Cost Analytics - Spending history, reports, forecasts.
 MEGA-TOOL bundling 12 functions into 1 tool.
 """
 
-from datetime import datetime, timedelta
 
 
 # GPU pricing data
@@ -125,7 +124,7 @@ TOTAL             │ 521.0 │ $646.04 │ 100%
 """
 
     elif action == "forecast":
-        return f"""
+        return """
 📈 SPENDING FORECAST
 ═══════════════════════════════════════════════════
 Based on current usage patterns:

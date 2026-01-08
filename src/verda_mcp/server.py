@@ -2747,6 +2747,52 @@ async def dashboard(action: str = "generate", theme: str = "dark") -> str:
 
 
 # =============================================================================
+# Dashboard API Server Tools (v2.5.0)
+# =============================================================================
+
+try:
+    from .api_server import dashboard_api as _dashboard_api
+    DASHBOARD_API_AVAILABLE = True
+except ImportError:
+    DASHBOARD_API_AVAILABLE = False
+    _dashboard_api = None
+
+
+@mcp.tool()
+async def dashboard_server(action: str = "status") -> str:
+    """MEGA-TOOL: Dashboard API Server (v2.5.0) - FastAPI Backend.
+
+    Control the Live Dashboard API server with real-time WebSocket updates,
+    settings persistence, and full integration with MCP tools.
+
+    Actions:
+    - status: Check if server dependencies are installed
+    - start: Get instructions to start the API server
+    - endpoints: List all API endpoints
+    - config: Show configuration options
+
+    The Dashboard API provides:
+    - REST endpoints for settings GET/PUT
+    - WebSocket for real-time GPU/training updates
+    - Settings persistence to config.yaml
+    - CORS support for browser access
+
+    Args:
+        action: Sub-command to run.
+    """
+    if not DASHBOARD_API_AVAILABLE:
+        return """❌ Dashboard API not available.
+
+Install dependencies:
+  pip install fastapi uvicorn websockets pydantic
+
+Or with optional extras:
+  pip install verda-cloud-mcp[dashboard]
+"""
+    return _dashboard_api(action=action)
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
@@ -2842,6 +2888,11 @@ def main():
         enterprise_count += 1
     if DASHBOARD_AVAILABLE:
         features.append("✅ Dashboard (1 mega-tool → 15 functions): Professional Web UI")
+        enterprise_count += 1
+
+    # v2.5.0 Dashboard API Server
+    if DASHBOARD_API_AVAILABLE:
+        features.append("✅ Dashboard API (1 tool): FastAPI/WebSocket/Settings Persistence")
         enterprise_count += 1
 
     for f in features:

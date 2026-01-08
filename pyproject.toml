@@ -1,7 +1,7 @@
 [project]
 name = "verda-cloud-mcp"
-version = "2.4.0"
-description = "Enterprise MCP server for Verda Cloud GPU management - 103 visible tools + 139 bundled functions, model hub, live dashboard, distributed training"
+version = "2.5.0"
+description = "Enterprise MCP server for Verda Cloud GPU management - 110+ visible tools + 180+ bundled functions, model hub (50+ models), live dashboard API, QLoRA/LoRA presets, WebSocket real-time updates"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -79,6 +79,12 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.8.0",
 ]
+dashboard = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "websockets>=12.0",
+    "pydantic>=2.5.0",
+]
 
 [tool.ruff]
 line-length = 120
@@ -94,6 +100,3 @@ quote-style = "double"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-
-
-

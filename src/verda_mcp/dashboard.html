@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verda Dashboard - Enterprise v2.5.0</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-yellow: #d29922;
+      --accent-red: #f85149;
+      --accent-purple: #a371f7;
+    }
+
+    * {
+      font-family: 'Inter', sans-serif;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Glass morphism */
+    .glass {
+      background: rgba(22, 27, 34, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    /* Sidebar - Compact Fixed positioning */
+    .sidebar {
+      width: 180px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-footer {
+      padding: 8px;
+      border-top: 1px solid var(--border-color);
+      font-size: 11px;
+    }
+
+    /* Navigation - Compact */
+    .nav-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 2px 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .nav-item.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .nav-item i {
+      width: 16px;
+      font-size: 12px;
+    }
+
+    /* Nav Section Headers */
+    .nav-section {
+      font-size: 10px;
+      color: var(--text-secondary);
+      padding: 8px 12px 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Settings Panel - Higher z-index */
+    .settings-panel {
+      position: fixed;
+      right: -500px;
+      top: 0;
+      width: 480px;
+      height: 100vh;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      z-index: 200;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .settings-panel.open {
+      right: 0;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 150;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .settings-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* Tabs */
+    .tab-btn {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--accent-blue);
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Toggle Switch */
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: var(--accent-green);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+    }
+
+    .toggle.on::after {
+      left: 22px;
+    }
+
+    /* Form Elements */
+    .input-field {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .select-field {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      width: 100%;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #4c9aff;
+    }
+
+    .btn-danger {
+      background: var(--accent-red);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    /* Status Indicators */
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.online {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.offline {
+      background: var(--accent-red);
+    }
+
+    .status-dot.warning {
+      background: var(--accent-yellow);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    /* Progress Bars */
+    .progress-bar {
+      background: var(--bg-tertiary);
+      border-radius: 9999px;
+      overflow: hidden;
+      height: 8px;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      height: 100%;
+      transition: width 0.3s;
+    }
+
+    .gpu-bar {
+      height: 24px;
+      border-radius: 6px;
+      background: var(--bg-tertiary);
+      overflow: hidden;
+    }
+
+    .gpu-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-green), #2ea043);
+      transition: width 0.3s;
+    }
+
+    /* Main Content Area - Compact */
+    .main-content {
+      margin-left: 180px;
+      min-height: 100vh;
+      padding-top: 48px;
+    }
+
+    .section {
+      display: none;
+      padding: 16px;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    /* Terminal/SSH Panel Styles */
+    .terminal-panel {
+      background: #000;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      padding: 12px;
+      height: 300px;
+      overflow-y: auto;
+      color: #00ff00;
+    }
+
+    .terminal-input {
+      background: transparent;
+      border: none;
+      color: #00ff00;
+      font-family: inherit;
+      font-size: inherit;
+      width: calc(100% - 20px);
+      outline: none;
+    }
+
+    .terminal-prompt {
+      color: #58a6ff;
+    }
+
+    /* Jupyter iframe container */
+    .jupyter-container {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .jupyter-container iframe {
+      width: 100%;
+      height: 400px;
+      border: none;
+    }
+
+    /* Compact Stats Grid */
+    .stats-grid-compact {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card-sm {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .stat-card-sm .label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .stat-card-sm .value {
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* Section Headers with Refresh */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .refresh-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: var(--border-color);
+      border-color: var(--accent-blue);
+    }
+
+    .refresh-btn.loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Logs */
+    .log-entry {
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .log-info {
+      background: rgba(88, 166, 255, 0.1);
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .log-success {
+      background: rgba(63, 185, 80, 0.1);
+      border-left: 3px solid var(--accent-green);
+    }
+
+    .log-warning {
+      background: rgba(210, 153, 34, 0.1);
+      border-left: 3px solid var(--accent-yellow);
+    }
+
+    .log-error {
+      background: rgba(248, 81, 73, 0.1);
+      border-left: 3px solid var(--accent-red);
+    }
+
+    /* Cards and Items */
+    .item-card {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .item-card:hover {
+      background: var(--border-color);
+      transform: translateY(-2px);
+    }
+
+    /* GPU Grid - Responsive */
+    .gpu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Error Banner */
+    .error-banner {
+      position: fixed;
+      top: 0;
+      left: 180px;
+      right: 0;
+      background: var(--accent-red);
+      color: white;
+      padding: 8px 16px;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .error-banner.show {
+      display: flex;
+    }
+
+    /* Connection Status Bar */
+    .connection-bar {
+      position: fixed;
+      bottom: 0;
+      left: 180px;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 40;
+      font-size: 11px;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 60px;
+      right: 24px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+      min-width: 300px;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--accent-green);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--accent-red);
+    }
+
+    .toast.warning {
+      border-left: 4px solid var(--accent-yellow);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Sparkline */
+    .sparkline {
+      height: 40px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .sparkline-bar {
+      width: 4px;
+      background: var(--accent-blue);
+      border-radius: 2px;
+      transition: height 0.3s;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Error Banner -->
+  <div class="error-banner" id="errorBanner">
+    <span id="errorMessage">Connection lost. Attempting to reconnect...</span>
+    <button onclick="manualReconnect()" class="btn btn-sm" style="background: rgba(255,255,255,0.2);">
+      <i class="fas fa-sync-alt"></i> Retry Now
+    </button>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Settings Overlay -->
+  <div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <div class="p-5 border-b border-gray-700 flex items-center justify-between">
+      <h2 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-cog"></i> Settings</h2>
+      <button onclick="toggleSettings()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+    </div>
+    <div class="flex border-b border-gray-700 text-sm">
+      <div class="tab-btn active" data-tab="providers">Providers</div>
+      <div class="tab-btn" data-tab="tools">Tools</div>
+      <div class="tab-btn" data-tab="training">Training</div>
+      <div class="tab-btn" data-tab="alerts">Alerts</div>
+      <div class="tab-btn" data-tab="budget">Budget</div>
+    </div>
+
+    <div class="settings-body">
+      <!-- Providers Tab -->
+      <div id="tab-providers" class="tab-content active p-5">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-plug text-blue-400"></i> Provider
+          Configuration</h3>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">☁️</span>
+              <div>
+                <div class="font-medium">Verda Cloud</div>
+                <div class="text-xs text-gray-400">GPU Provider</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="status-dot online" id="verdaStatus"></div><span class="text-green-400 text-xs"
+                id="verdaStatusText">Connected</span>
+            </div>
+          </div>
+          <input type="text" class="input-field mb-2 text-sm" id="verdaApiUrl" value="https://api.verda.ai" />
+          <select class="select-field w-full text-sm" id="verdaLocation">
+            <option value="FIN-01">FIN-01 (Primary)</option>
+            <option value="FIN-02">FIN-02</option>
+            <option value="FIN-03">FIN-03</option>
+          </select>
+        </div>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🤗</span>
+              <div>
+                <div class="font-medium">HuggingFace</div>
+                <div class="text-xs text-gray-400">Model Hub</div>
+              </div>
+            </div>
+            <div class="toggle on" id="hfEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="password" class="input-field text-sm" id="hfToken" placeholder="HF API Token (hf_xxx)" />
+        </div>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🦙</span>
+              <div>
+                <div class="font-medium">Ollama</div>
+                <div class="text-xs text-gray-400">Local Models</div>
+              </div>
+            </div>
+            <div class="toggle on" id="ollamaEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="text" class="input-field text-sm" id="ollamaUrl" value="http://localhost:11434" />
+        </div>
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🎨</span>
+              <div>
+                <div class="font-medium">LM Studio</div>
+                <div class="text-xs text-gray-400">GGUF Models</div>
+              </div>
+            </div>
+            <div class="toggle" id="lmstudioEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="text" class="input-field text-sm" id="lmstudioUrl" value="http://localhost:1234" />
+        </div>
+      </div>
+
+      <!-- Tools Tab -->
+      <div id="tab-tools" class="tab-content p-5">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-tools text-purple-400"></i> Tool
+          Configuration</h3>
+        <div class="card p-4 space-y-3">
+          <div class="flex items-center justify-between"><span class="text-sm">SSH Remote Access</span>
+            <div class="toggle on" id="toolSsh" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="flex items-center justify-between"><span class="text-sm">Google Drive Integration</span>
+            <div class="toggle on" id="toolGdrive" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="flex items-center justify-between"><span class="text-sm">WatchDog Monitoring</span>
+            <div class="toggle on" id="toolWatchdog" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="flex items-center justify-between"><span class="text-sm">Smart Deployer</span>
+            <div class="toggle on" id="toolDeployer" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="flex items-center justify-between"><span class="text-sm">Cost Analytics</span>
+            <div class="toggle on" id="toolCost" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="flex items-center justify-between"><span class="text-sm">Performance Advisor</span>
+            <div class="toggle on" id="toolPerf" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Tab -->
+      <div id="tab-training" class="tab-content p-5">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-graduation-cap text-green-400"></i>
+          Training Configuration</h3>
+        <div class="card p-4 mb-4">
+          <h4 class="text-sm font-medium mb-3">Checkpoints</h4>
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400">Save Interval (minutes)</label><input type="number"
+                class="input-field text-sm" id="checkpointInterval" value="10" /></div>
+            <div><label class="text-xs text-gray-400">Max Checkpoints</label><input type="number"
+                class="input-field text-sm" id="maxCheckpoints" value="5" /></div>
+            <div class="flex items-center justify-between"><span class="text-sm">Auto-upload to GDrive</span>
+              <div class="toggle" id="autoUpload" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h4 class="text-sm font-medium mb-3">LoRA Preset</h4>
+          <select class="select-field w-full text-sm" id="loraPreset">
+            <option value="minimal">Minimal (r=8) - Quick experiments</option>
+            <option value="standard" selected>Standard (r=16) - Balanced</option>
+            <option value="extended">Extended (r=32) - Better quality</option>
+            <option value="full">Full (r=64) - High quality</option>
+            <option value="maximum">Maximum (r=256) - Best quality</option>
+            <option value="qlora_4bit">QLoRA 4-bit - 75% VRAM reduction</option>
+            <option value="qlora_8bit">QLoRA 8-bit - Memory efficient</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Alerts Tab -->
+      <div id="tab-alerts" class="tab-content p-5">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-bell text-yellow-400"></i> Notifications
+        </h3>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3"><i class="fab fa-discord text-indigo-400 text-xl"></i><span
+                class="font-medium">Discord</span></div>
+            <div class="toggle on" id="discordEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="text" class="input-field text-sm" id="discordWebhook" placeholder="Webhook URL" />
+        </div>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3"><i class="fab fa-slack text-green-400 text-xl"></i><span
+                class="font-medium">Slack</span></div>
+            <div class="toggle" id="slackEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="text" class="input-field text-sm" id="slackWebhook" placeholder="Webhook URL" />
+        </div>
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3"><i class="fab fa-telegram text-blue-400 text-xl"></i><span
+                class="font-medium">Telegram</span></div>
+            <div class="toggle" id="telegramEnabled" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <input type="text" class="input-field text-sm" id="telegramToken" placeholder="Bot Token" />
+        </div>
+        <div class="card p-4">
+          <h4 class="text-sm font-medium mb-3">Alert Events</h4>
+          <div class="space-y-2 text-sm">
+            <div class="flex items-center justify-between"><span>Training started</span>
+              <div class="toggle on" id="alertStart" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span>Training completed</span>
+              <div class="toggle on" id="alertComplete" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span>Checkpoint saved</span>
+              <div class="toggle on" id="alertCheckpoint" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span>Spot eviction warning</span>
+              <div class="toggle on" id="alertEviction" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span>Budget threshold</span>
+              <div class="toggle on" id="alertBudget" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span>Errors</span>
+              <div class="toggle on" id="alertErrors" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Tab -->
+      <div id="tab-budget" class="tab-content p-5">
+        <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-dollar-sign text-green-400"></i> Budget
+          & Limits</h3>
+        <div class="card p-4 mb-4">
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400">Monthly Budget ($)</label><input type="number"
+                class="input-field text-sm" id="monthlyBudget" value="500" /></div>
+            <div><label class="text-xs text-gray-400">Daily Limit ($)</label><input type="number"
+                class="input-field text-sm" id="dailyLimit" value="50" /></div>
+            <div class="flex items-center justify-between"><span class="text-sm">Alert at 70%</span>
+              <div class="toggle on" id="budgetAlert70" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="flex items-center justify-between"><span class="text-sm">Auto-stop at 95%</span>
+              <div class="toggle" id="budgetAutoStop" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h4 class="text-sm font-medium mb-3">API Settings</h4>
+          <div class="space-y-3">
+            <div><label class="text-xs text-gray-400">Refresh Interval (sec)</label><input type="number"
+                class="input-field text-sm" id="refreshInterval" value="30" /></div>
+            <div class="flex items-center justify-between"><span class="text-sm">Auto-reconnect</span>
+              <div class="toggle on" id="autoReconnect" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-5 border-t border-gray-700">
+      <button class="btn btn-primary w-full" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Sidebar - Compact -->
+  <aside class="sidebar">
+    <div class="p-3 border-b border-gray-700">
+      <div class="text-sm font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">🚀 Verda
+      </div>
+      <div class="text-[10px] text-gray-400">v2.5.0</div>
+    </div>
+    <div class="sidebar-content">
+      <nav class="py-2">
+        <div class="nav-section">Monitor</div>
+        <div class="nav-item active" data-section="overview"><i class="fas fa-chart-pie"></i>Overview</div>
+        <div class="nav-item" data-section="training"><i class="fas fa-bullseye"></i>Training</div>
+        <div class="nav-item" data-section="gpus"><i class="fas fa-microchip"></i>GPUs</div>
+        <div class="nav-item" data-section="costs"><i class="fas fa-dollar-sign"></i>Costs</div>
+
+        <div class="nav-section">Resources</div>
+        <div class="nav-item" data-section="models"><i class="fas fa-cube"></i>Models</div>
+        <div class="nav-item" data-section="datasets"><i class="fas fa-database"></i>Datasets</div>
+
+        <div class="nav-section">Tools</div>
+        <div class="nav-item" data-section="terminal"><i class="fas fa-terminal"></i>Terminal</div>
+        <div class="nav-item" data-section="ssh"><i class="fas fa-server"></i>SSH</div>
+        <div class="nav-item" data-section="jupyter"><i class="fas fa-book"></i>Jupyter</div>
+
+        <div class="nav-section">System</div>
+        <div class="nav-item" data-section="logs"><i class="fas fa-scroll"></i>Logs</div>
+        <div class="nav-item" data-section="alerts"><i class="fas fa-bell"></i>Alerts</div>
+      </nav>
+    </div>
+    <div class="sidebar-footer">
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-1">
+          <div class="status-dot online" id="sidebarStatus" style="width:6px;height:6px;"></div>
+          <span class="text-[10px] text-green-400" id="sidebarStatusText">Online</span>
+        </div>
+        <span class="text-[10px] text-gray-500">FIN-01</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-green-400" id="sessionCost">$12.45</span>
+        <span class="text-[10px] text-gray-500" id="sessionSaved">-$37</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Header - Compact -->
+  <header class="glass fixed top-0 z-30 px-4 py-2 flex items-center justify-between" style="left: 180px; right: 0;">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg" style="background: var(--bg-tertiary);">
+        <div class="status-dot online" id="headerInstanceStatus"></div>
+        <span class="text-sm" id="headerInstanceInfo">No Instance</span>
+        <span class="text-xs text-gray-400" id="headerLocation">-</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="btn btn-secondary text-sm" onclick="globalRefresh()"><i class="fas fa-sync-alt"></i> Refresh
+        All</button>
+      <button class="btn btn-secondary text-sm" onclick="toggleSettings()"><i class="fas fa-cog"></i></button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content" style="padding-bottom: 60px;">
+    <!-- Overview Section -->
+    <div id="section-overview" class="section active">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-chart-pie text-blue-400"></i> Overview</h2>
+        <button class="refresh-btn" onclick="refreshSection('overview')"><i class="fas fa-sync-alt"></i>
+          Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">GPU UTILIZATION</span>
+          <div class="text-3xl font-bold text-green-400 mt-2" id="gpuUtil">--%</div>
+          <div class="sparkline mt-3" id="gpuSparkline"></div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">TRAINING LOSS</span>
+          <div class="text-3xl font-bold text-blue-400 mt-2" id="trainingLoss">--</div>
+          <div class="text-sm text-gray-400 mt-1" id="lossChange">--</div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">PROGRESS</span>
+          <div class="text-3xl font-bold text-purple-400 mt-2" id="trainingProgress">--%</div>
+          <div class="progress-bar mt-3">
+            <div class="progress-fill" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">ETA</span>
+          <div class="text-3xl font-bold text-yellow-400 mt-2" id="trainingEta">--</div>
+          <div class="text-sm text-gray-400 mt-1" id="epochInfo">--</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="card p-5">
+          <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-chart-line text-blue-400"></i>
+            Training Loss</h3>
+          <canvas id="lossChart" height="200"></canvas>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-memory text-purple-400"></i> GPU
+            Memory</h3>
+          <canvas id="memChart" height="200"></canvas>
+        </div>
+      </div>
+      <div class="card p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold flex items-center gap-2"><i class="fas fa-microchip text-green-400"></i> GPU Status
+          </h3>
+          <button class="refresh-btn btn-sm" onclick="refreshGPUs()"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div class="gpu-grid" id="gpuGrid">
+          <!-- GPU cards will be dynamically inserted -->
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="card p-5">
+          <h3 class="font-semibold mb-4 flex items-center gap-2"><i class="fas fa-gamepad text-yellow-400"></i> Controls
+          </h3>
+          <div class="space-y-3">
+            <button class="btn btn-danger w-full" onclick="stopTraining()"><i class="fas fa-stop"></i> Stop
+              Training</button>
+            <button class="btn btn-primary w-full" onclick="saveCheckpoint()"><i class="fas fa-save"></i> Save
+              Checkpoint</button>
+            <button class="btn btn-secondary w-full" onclick="downloadLogs()"><i class="fas fa-download"></i> Download
+              Logs</button>
+          </div>
+        </div>
+        <div class="card p-5 lg:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold flex items-center gap-2"><i class="fas fa-terminal text-blue-400"></i> Live Logs
+            </h3>
+            <button class="refresh-btn btn-sm" onclick="refreshLogs()"><i class="fas fa-sync-alt"></i></button>
+          </div>
+          <div class="h-48 overflow-y-auto space-y-1 bg-black/20 rounded-lg p-3" id="liveLogs">
+            <div class="log-entry log-info">[--:--:--] Waiting for data...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Training Section -->
+    <div id="section-training" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-bullseye text-green-400"></i> Training</h2>
+        <button class="refresh-btn" onclick="refreshSection('training')"><i class="fas fa-sync-alt"></i>
+          Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <h3 class="font-semibold mb-4">Current Training Job</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between"><span class="text-gray-400">Model</span><span id="trainModel">--</span>
+            </div>
+            <div class="flex justify-between"><span class="text-gray-400">Dataset</span><span
+                id="trainDataset">--</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Batch Size</span><span
+                id="trainBatch">--</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Learning Rate</span><span
+                id="trainLR">--</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Epochs</span><span id="trainEpochs">--</span>
+            </div>
+            <div class="flex justify-between"><span class="text-gray-400">Method</span><span id="trainMethod">--</span>
+            </div>
+          </div>
+        </div>
+        <div class="card p-6">
+          <h3 class="font-semibold mb-4">Training Metrics</h3>
+          <canvas id="trainingMetricsChart" height="250"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- GPUs Section -->
+    <div id="section-gpus" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-microchip text-purple-400"></i> GPU Management</h2>
+        <button class="refresh-btn" onclick="refreshSection('gpus')"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="card p-6 mb-6">
+        <h3 class="font-semibold mb-4">Available GPU Types</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-400 border-b border-gray-700">
+                <th class="pb-3">GPU</th>
+                <th class="pb-3">VRAM</th>
+                <th class="pb-3">Spot $/hr</th>
+                <th class="pb-3">On-Demand</th>
+                <th class="pb-3">TFLOPs</th>
+                <th class="pb-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="gpuTable">
+              <tr>
+                <td colspan="6" class="py-4 text-center text-gray-400">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Costs Section -->
+    <div id="section-costs" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-dollar-sign text-green-400"></i> Cost Analytics</h2>
+        <button class="refresh-btn" onclick="refreshSection('costs')"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">TODAY</span>
+          <div class="text-2xl font-bold text-green-400 mt-2" id="costToday">$0.00</div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">THIS WEEK</span>
+          <div class="text-2xl font-bold text-blue-400 mt-2" id="costWeek">$0.00</div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">THIS MONTH</span>
+          <div class="text-2xl font-bold text-purple-400 mt-2" id="costMonth">$0.00</div>
+        </div>
+        <div class="card p-5">
+          <span class="text-sm text-gray-400">SPOT SAVINGS</span>
+          <div class="text-2xl font-bold text-yellow-400 mt-2" id="spotSavings">$0.00</div>
+        </div>
+      </div>
+      <div class="card p-6 mt-6">
+        <h3 class="font-semibold mb-4">Cost History</h3>
+        <canvas id="costChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Models Section -->
+    <div id="section-models" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-cube text-blue-400"></i> Model Hub</h2>
+        <button class="refresh-btn" onclick="refreshSection('models')"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="modelGrid">
+        <!-- Model cards will be dynamically inserted -->
+      </div>
+    </div>
+
+    <!-- Datasets Section -->
+    <div id="section-datasets" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-database text-purple-400"></i> Datasets</h2>
+        <button class="refresh-btn" onclick="refreshSection('datasets')"><i class="fas fa-sync-alt"></i>
+          Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="datasetGrid">
+        <!-- Dataset cards will be dynamically inserted -->
+      </div>
+    </div>
+
+    <!-- Terminal Section -->
+    <div id="section-terminal" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-terminal text-green-400"></i> Terminal</h2>
+        <button class="refresh-btn" onclick="clearTerminal()"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <select class="select-field text-xs" style="width:auto;" id="terminalTarget">
+            <option value="local">Local</option>
+            <option value="instance">Instance (MCP)</option>
+          </select>
+          <span class="text-xs text-gray-400" id="terminalStatus">Ready</span>
+        </div>
+        <div class="terminal-panel" id="terminalOutput">
+          <div><span class="terminal-prompt">$</span> Verda Terminal Ready</div>
+          <div class="text-gray-500">MCP tools: mcp.tool_name(args)</div>
+        </div>
+        <div class="flex items-center gap-2 mt-2 bg-black rounded p-2">
+          <span class="terminal-prompt">$</span>
+          <input type="text" class="terminal-input" id="terminalInput" placeholder="Command..."
+            onkeydown="if(event.key==='Enter')runTerminalCommand()">
+        </div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="grid grid-cols-4 gap-2">
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runMcpCommand('list_instances')">Instances</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runMcpCommand('available_now')">GPUs</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runMcpCommand('check_balance')">Balance</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runMcpCommand('best_deals_now')">Deals</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SSH Section -->
+    <div id="section-ssh" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-server text-blue-400"></i> SSH</h2>
+        <button class="refresh-btn" onclick="refreshSection('ssh')"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      <div class="card p-4 mb-3">
+        <div class="grid grid-cols-3 gap-2">
+          <input type="text" class="input-field text-sm" id="sshHost" placeholder="Instance IP">
+          <input type="text" class="input-field text-sm" id="sshUser" value="root">
+          <button class="btn btn-primary btn-sm" onclick="connectSSH()"><i class="fas fa-plug"></i> Connect</button>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="terminal-panel" id="sshOutput" style="height:280px;">
+          <div class="text-gray-500">SSH ready. Connect above.</div>
+        </div>
+        <div class="flex items-center gap-2 mt-2 bg-black rounded p-2">
+          <span class="terminal-prompt">remote$</span>
+          <input type="text" class="terminal-input" id="sshInput" placeholder="Remote command..."
+            onkeydown="if(event.key==='Enter')runSSHCommand()" disabled>
+        </div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="grid grid-cols-4 gap-2">
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runSSHQuick('nvidia-smi')">nvidia-smi</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runSSHQuick('df -h')">Disk</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runSSHQuick('free -h')">Memory</button>
+          <button class="btn btn-secondary btn-sm text-xs" onclick="runSSHQuick('htop -n1')">Load</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jupyter Section -->
+    <div id="section-jupyter" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-book text-orange-400"></i> Jupyter</h2>
+        <button class="refresh-btn" onclick="refreshSection('jupyter')"><i class="fas fa-sync-alt"></i></button>
+      </div>
+      <div class="card p-4 mb-3">
+        <div class="grid grid-cols-4 gap-2">
+          <input type="text" class="input-field text-sm" id="jupyterHost" placeholder="Instance IP">
+          <input type="number" class="input-field text-sm" id="jupyterPort" value="8888">
+          <input type="password" class="input-field text-sm" id="jupyterToken" placeholder="Token">
+          <button class="btn btn-primary btn-sm" onclick="connectJupyter()"><i class="fas fa-link"></i> Connect</button>
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="jupyter-container" id="jupyterContainer">
+          <div class="flex items-center justify-center h-80 bg-gray-900 text-gray-400">
+            <div class="text-center">
+              <i class="fas fa-book text-3xl mb-3"></i>
+              <p class="text-sm">Connect to Jupyter above</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button class="btn btn-secondary btn-sm" onclick="startJupyterOnInstance()"><i class="fas fa-rocket"></i> Start
+          on Instance</button>
+        <button class="btn btn-secondary btn-sm" onclick="openJupyterNewTab()"><i class="fas fa-external-link-alt"></i>
+          New Tab</button>
+      </div>
+    </div>
+
+    <!-- Logs Section -->
+    <div id="section-logs" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-scroll text-yellow-400"></i> System Logs</h2>
+        <button class="refresh-btn" onclick="refreshSection('logs')"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="card p-6">
+        <div class="flex items-center gap-4 mb-4">
+          <select class="select-field" style="width: auto;" id="logLevel">
+            <option value="all">All Levels</option>
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="error">Error</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="clearLogs()"><i class="fas fa-trash"></i> Clear</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportLogs()"><i class="fas fa-download"></i>
+            Export</button>
+        </div>
+        <div class="h-96 overflow-y-auto space-y-1 bg-black/20 rounded-lg p-4" id="systemLogs">
+          <div class="log-entry log-info">[--:--:--] System initialized</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div id="section-alerts" class="section">
+      <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-bell text-red-400"></i> Alerts</h2>
+        <button class="refresh-btn" onclick="refreshSection('alerts')"><i class="fas fa-sync-alt"></i> Refresh</button>
+      </div>
+      <div class="space-y-4" id="alertsList">
+        <div class="card p-4 text-gray-400 text-center">No alerts</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Connection Status Bar -->
+  <div class="connection-bar">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <div class="status-dot online" id="wsStatus"></div>
+        <span id="wsStatusText">Connected</span>
+      </div>
+      <span class="text-gray-500">|</span>
+      <span id="lastUpdate">Last update: --</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="reconnectInfo"></span>
+      <span class="text-gray-400">v2.5.0</span>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // Verda Dashboard v2.5.0 - Professional JavaScript with Error Recovery
+    // =========================================================================
+
+    // Configuration
+    const CONFIG = {
+      apiBase: window.location.origin,
+      wsUrl: `ws://${window.location.host}/ws`,
+      refreshInterval: 30000,
+      reconnectDelay: 3000,
+      maxReconnectAttempts: 10,
+      heartbeatInterval: 15000
+    };
+
+    // State Management
+    const STATE = {
+      ws: null,
+      connected: false,
+      reconnectAttempts: 0,
+      refreshTimer: null,
+      heartbeatTimer: null,
+      lastUpdate: null,
+      charts: {},
+      gpuData: [],
+      settings: {}
+    };
+
+    // =========================================================================
+    // WebSocket Connection with Auto-Recovery
+    // =========================================================================
+
+    function initWebSocket() {
+      if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) return;
+
+      try {
+        STATE.ws = new WebSocket(CONFIG.wsUrl);
+
+        STATE.ws.onopen = () => {
+          console.log('[WS] Connected');
+          STATE.connected = true;
+          STATE.reconnectAttempts = 0;
+          updateConnectionStatus(true);
+          hideError();
+          showToast('Connected to server', 'success');
+          startHeartbeat();
+        };
+
+        STATE.ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+          } catch (e) {
+            console.error('[WS] Parse error:', e);
+          }
+        };
+
+        STATE.ws.onclose = (event) => {
+          console.log('[WS] Disconnected:', event.code);
+          STATE.connected = false;
+          updateConnectionStatus(false);
+          stopHeartbeat();
+          attemptReconnect();
+        };
+
+        STATE.ws.onerror = (error) => {
+          console.error('[WS] Error:', error);
+          showError('WebSocket connection error');
+        };
+      } catch (e) {
+        console.error('[WS] Init error:', e);
+        attemptReconnect();
+      }
+    }
+
+    function attemptReconnect() {
+      if (STATE.reconnectAttempts >= CONFIG.maxReconnectAttempts) {
+        showError('Max reconnection attempts reached. Please refresh the page.');
+        return;
+      }
+
+      STATE.reconnectAttempts++;
+      const delay = CONFIG.reconnectDelay * Math.min(STATE.reconnectAttempts, 5);
+
+      document.getElementById('reconnectInfo').textContent =
+        `Reconnecting in ${Math.round(delay / 1000)}s (${STATE.reconnectAttempts}/${CONFIG.maxReconnectAttempts})`;
+
+      setTimeout(() => {
+        console.log(`[WS] Reconnect attempt ${STATE.reconnectAttempts}`);
+        initWebSocket();
+      }, delay);
+    }
+
+    function manualReconnect() {
+      STATE.reconnectAttempts = 0;
+      hideError();
+      initWebSocket();
+    }
+
+    function startHeartbeat() {
+      stopHeartbeat();
+      STATE.heartbeatTimer = setInterval(() => {
+        if (STATE.ws && STATE.ws.readyState === WebSocket.OPEN) {
+          STATE.ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, CONFIG.heartbeatInterval);
+    }
+
+    function stopHeartbeat() {
+      if (STATE.heartbeatTimer) {
+        clearInterval(STATE.heartbeatTimer);
+        STATE.heartbeatTimer = null;
+      }
+    }
+
+    function handleWebSocketMessage(data) {
+      STATE.lastUpdate = new Date();
+      updateLastUpdateTime();
+
+      switch (data.type) {
+        case 'gpu_update':
+          updateGPUData(data.payload);
+          break;
+        case 'training_update':
+          updateTrainingData(data.payload);
+          break;
+        case 'log':
+          addLogEntry(data.payload);
+          break;
+        case 'alert':
+          addAlert(data.payload);
+          break;
+        case 'pong':
+          // Heartbeat response
+          break;
+        default:
+          console.log('[WS] Unknown message type:', data.type);
+      }
+    }
+
+    // =========================================================================
+    // Connection Status Management
+    // =========================================================================
+
+    function updateConnectionStatus(connected) {
+      const statusDots = document.querySelectorAll('#wsStatus, #sidebarStatus, #verdaStatus');
+      const statusTexts = {
+        'wsStatus': 'wsStatusText',
+        'sidebarStatus': 'sidebarStatusText',
+        'verdaStatus': 'verdaStatusText'
+      };
+
+      statusDots.forEach(dot => {
+        dot.classList.toggle('online', connected);
+        dot.classList.toggle('offline', !connected);
+      });
+
+      Object.entries(statusTexts).forEach(([dotId, textId]) => {
+        const textEl = document.getElementById(textId);
+        if (textEl) {
+          textEl.textContent = connected ? 'Connected' : 'Disconnected';
+          textEl.className = connected ? 'text-xs text-green-400' : 'text-xs text-red-400';
+        }
+      });
+
+      document.getElementById('reconnectInfo').textContent = '';
+    }
+
+    function updateLastUpdateTime() {
+      const el = document.getElementById('lastUpdate');
+      if (STATE.lastUpdate) {
+        el.textContent = `Last update: ${STATE.lastUpdate.toLocaleTimeString()}`;
+      }
+    }
+
+    // =========================================================================
+    // Error Handling & Toast Notifications
+    // =========================================================================
+
+    function showError(message) {
+      const banner = document.getElementById('errorBanner');
+      const msgEl = document.getElementById('errorMessage');
+      msgEl.textContent = message;
+      banner.classList.add('show');
+    }
+
+    function hideError() {
+      document.getElementById('errorBanner').classList.remove('show');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+
+      const icons = { success: 'check-circle', error: 'exclamation-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+      const colors = { success: 'text-green-400', error: 'text-red-400', warning: 'text-yellow-400', info: 'text-blue-400' };
+
+      toast.innerHTML = `
+            <i class="fas fa-${icons[type] || icons.info} ${colors[type] || colors.info}"></i>
+            <span>${message}</span>
+        `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+    // =========================================================================
+    // Navigation & Settings
+    // =========================================================================
+
+    function showSection(section) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+      const navItem = document.querySelector(`.nav-item[data-section="${section}"]`);
+      const sectionEl = document.getElementById(`section-${section}`);
+
+      if (navItem) navItem.classList.add('active');
+      if (sectionEl) sectionEl.classList.add('active');
+
+      // Refresh section data when switching
+      refreshSection(section);
+    }
+
+    function toggleSettings() {
+      document.getElementById('settingsPanel').classList.toggle('open');
+      document.getElementById('settingsOverlay').classList.toggle('open');
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+      const tabBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+      const tabContent = document.getElementById(`tab-${tab}`);
+
+      if (tabBtn) tabBtn.classList.add('active');
+      if (tabContent) tabContent.classList.add('active');
+    }
+
+    // =========================================================================
+    // Data Refresh Functions
+    // =========================================================================
+
+    async function globalRefresh() {
+      const btn = event.target.closest('button');
+      btn.classList.add('loading');
+
+      try {
+        await Promise.all([
+          fetchGPUData(),
+          fetchTrainingData(),
+          fetchCostData(),
+          fetchLogs()
+        ]);
+        showToast('All data refreshed', 'success');
+      } catch (e) {
+        showToast('Refresh failed: ' + e.message, 'error');
+      } finally {
+        btn.classList.remove('loading');
+      }
+    }
+
+    async function refreshSection(section) {
+      const btn = document.querySelector(`#section-${section} .refresh-btn`);
+      if (btn) btn.classList.add('loading');
+
+      try {
+        switch (section) {
+          case 'overview':
+            await Promise.all([fetchGPUData(), fetchTrainingData()]);
+            break;
+          case 'training':
+            await fetchTrainingData();
+            break;
+          case 'gpus':
+            await fetchGPUData();
+            break;
+          case 'costs':
+            await fetchCostData();
+            break;
+          case 'models':
+            await fetchModels();
+            break;
+          case 'datasets':
+            await fetchDatasets();
+            break;
+          case 'logs':
+            await fetchLogs();
+            break;
+          case 'alerts':
+            await fetchAlerts();
+            break;
+        }
+      } catch (e) {
+        console.error(`[Refresh] ${section} failed:`, e);
+      } finally {
+        if (btn) btn.classList.remove('loading');
+      }
+    }
+
+    function refreshGPUs() {
+      fetchGPUData();
+    }
+
+    function refreshLogs() {
+      fetchLogs();
+    }
+
+    // =========================================================================
+    // API Fetch Functions with Error Recovery
+    // =========================================================================
+
+    async function fetchWithRetry(url, options = {}, retries = 3) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, {
+            ...options,
+            headers: { 'Content-Type': 'application/json', ...options.headers }
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.json();
+        } catch (e) {
+          if (i === retries - 1) throw e;
+          await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+      }
+    }
+
+    async function fetchGPUData() {
+      try {
+        const data = await fetchWithRetry(`${CONFIG.apiBase}/api/gpu`);
+        updateGPUData(data);
+      } catch (e) {
+        console.error('[API] GPU fetch failed:', e);
+      }
+    }
+
+    async function fetchTrainingData() {
+      try {
+        const data = await fetchWithRetry(`${CONFIG.apiBase}/api/training`);
+        updateTrainingData(data);
+      } catch (e) {
+        console.error('[API] Training fetch failed:', e);
+      }
+    }
+
+    async function fetchCostData() {
+      try {
+        const data = await fetchWithRetry(`${CONFIG.apiBase}/api/costs`);
+        updateCostData(data);
+      } catch (e) {
+        console.error('[API] Cost fetch failed:', e);
+      }
+    }
+
+    async function fetchLogs() {
+      try {
+        const data = await fetchWithRetry(`${CONFIG.apiBase}/api/logs`);
+        updateLogs(data);
+      } catch (e) {
+        console.error('[API] Logs fetch failed:', e);
+      }
+    }
+
+    async function fetchModels() {
+      // Populate model grid with sample data
+      const models = [
+        { name: 'LLaMA 3.1 8B', source: 'HuggingFace', vram: '16GB', gpu: 'A6000' },
+        { name: 'Mistral 7B', source: 'Ollama', vram: '14GB', gpu: 'A6000' },
+        { name: 'Qwen2.5 72B', source: 'HuggingFace', vram: '150GB', gpu: 'H200' },
+        { name: 'DeepSeek-Coder', source: 'Ollama', vram: '24GB', gpu: 'L40S' },
+        { name: 'FLUX.1-dev', source: 'HuggingFace', vram: '48GB', gpu: 'A6000' },
+        { name: 'Whisper v3', source: 'HuggingFace', vram: '4GB', gpu: 'Any' }
+      ];
+      renderModels(models);
+    }
+
+    async function fetchDatasets() {
+      const datasets = [
+        { name: 'Alpaca', samples: '52K', size: '50MB' },
+        { name: 'SlimOrca', samples: '518K', size: '800MB' },
+        { name: 'OpenAssistant', samples: '161K', size: '200MB' },
+        { name: 'UltraChat', samples: '1.5M', size: '2GB' }
+      ];
+      renderDatasets(datasets);
+    }
+
+    async function fetchAlerts() {
+      // Placeholder
+    }
+
+    // =========================================================================
+    // UI Update Functions
+    // =========================================================================
+
+    function updateGPUData(data) {
+      if (!data || !data.gpus) return;
+
+      STATE.gpuData = data.gpus;
+
+      // Update overview stats
+      const avgUtil = data.gpus.reduce((a, g) => a + g.utilization, 0) / data.gpus.length;
+      document.getElementById('gpuUtil').textContent = `${Math.round(avgUtil)}%`;
+
+      // Update GPU grid
+      const grid = document.getElementById('gpuGrid');
+      grid.innerHTML = data.gpus.map((gpu, i) => `
+            <div class="p-4 rounded-lg" style="background: var(--bg-tertiary);">
+                <div class="flex justify-between mb-2">
+                    <span>GPU ${i}</span>
+                    <span class="text-green-400">${gpu.utilization}%</span>
+                </div>
+                <div class="gpu-bar"><div class="gpu-fill" style="width:${gpu.utilization}%"></div></div>
+                <div class="flex justify-between mt-2 text-xs text-gray-400">
+                    <span>${gpu.memory_used}/${gpu.memory_total}GB</span>
+                    <span>${gpu.temperature}°C</span>
+                </div>
+            </div>
+        `).join('');
+
+      // Update sparkline
+      updateSparkline(data.gpus.map(g => g.utilization));
+    }
+
+    function updateTrainingData(data) {
+      if (!data) return;
+
+      if (data.loss !== undefined) {
+        document.getElementById('trainingLoss').textContent = data.loss.toFixed(3);
+      }
+      if (data.progress !== undefined) {
+        document.getElementById('trainingProgress').textContent = `${data.progress}%`;
+        document.getElementById('progressBar').style.width = `${data.progress}%`;
+      }
+      if (data.eta) {
+        document.getElementById('trainingEta').textContent = data.eta;
+      }
+      if (data.epoch) {
+        document.getElementById('epochInfo').textContent = `Epoch ${data.epoch.current}/${data.epoch.total}`;
+      }
+    }
+
+    function updateCostData(data) {
+      if (!data) return;
+
+      document.getElementById('costToday').textContent = `$${(data.today || 0).toFixed(2)}`;
+      document.getElementById('costWeek').textContent = `$${(data.week || 0).toFixed(2)}`;
+      document.getElementById('costMonth').textContent = `$${(data.month || 0).toFixed(2)}`;
+      document.getElementById('spotSavings').textContent = `$${(data.savings || 0).toFixed(2)}`;
+      document.getElementById('sessionCost').textContent = `$${(data.session || 0).toFixed(2)}`;
+      document.getElementById('sessionSaved').textContent = `Saved $${(data.sessionSaved || 0).toFixed(2)}`;
+    }
+
+    function updateLogs(data) {
+      if (!data || !data.logs) return;
+
+      const container = document.getElementById('liveLogs');
+      container.innerHTML = data.logs.map(log => `
+            <div class="log-entry log-${log.level}">[${log.timestamp}] ${log.message}</div>
+        `).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addLogEntry(log) {
+      const container = document.getElementById('liveLogs');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${log.level || 'info'}`;
+      entry.textContent = `[${log.timestamp || new Date().toLocaleTimeString()}] ${log.message}`;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+
+      // Keep only last 100 entries
+      while (container.children.length > 100) {
+        container.removeChild(container.firstChild);
+      }
+    }
+
+    function addAlert(alert) {
+      showToast(alert.message, alert.type || 'warning');
+    }
+
+    function updateSparkline(values) {
+      const container = document.getElementById('gpuSparkline');
+      container.innerHTML = '';
+
+      const max = Math.max(...values, 100);
+      values.forEach(v => {
+        const bar = document.createElement('div');
+        bar.className = 'sparkline-bar';
+        bar.style.height = `${(v / max) * 100}%`;
+        container.appendChild(bar);
+      });
+    }
+
+    function renderModels(models) {
+      const grid = document.getElementById('modelGrid');
+      grid.innerHTML = models.map(m => `
+            <div class="item-card">
+                <div class="flex items-center gap-3 mb-3">
+                    <span class="text-2xl">${m.source === 'HuggingFace' ? '🤗' : '🦙'}</span>
+                    <div>
+                        <div class="font-semibold">${m.name}</div>
+                        <div class="text-sm text-gray-400">${m.source}</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-400 mb-3">${m.vram} • ${m.gpu}</div>
+                <button class="btn btn-primary w-full text-sm">Download</button>
+            </div>
+        `).join('');
+    }
+
+    function renderDatasets(datasets) {
+      const grid = document.getElementById('datasetGrid');
+      grid.innerHTML = datasets.map(d => `
+            <div class="item-card">
+                <div class="font-semibold mb-2">${d.name}</div>
+                <div class="text-sm text-gray-400">${d.samples} samples • ${d.size}</div>
+            </div>
+        `).join('');
+    }
+
+    // =========================================================================
+    // Settings Management
+    // =========================================================================
+
+    async function saveSettings() {
+      const settings = {
+        providers: {
+          verda: { url: document.getElementById('verdaApiUrl').value, location: document.getElementById('verdaLocation').value },
+          huggingface: { enabled: document.getElementById('hfEnabled').classList.contains('on'), token: document.getElementById('hfToken').value },
+          ollama: { enabled: document.getElementById('ollamaEnabled').classList.contains('on'), url: document.getElementById('ollamaUrl').value },
+          lmstudio: { enabled: document.getElementById('lmstudioEnabled').classList.contains('on'), url: document.getElementById('lmstudioUrl').value }
+        },
+        training: {
+          checkpointInterval: parseInt(document.getElementById('checkpointInterval').value),
+          maxCheckpoints: parseInt(document.getElementById('maxCheckpoints').value),
+          loraPreset: document.getElementById('loraPreset').value
+        },
+        budget: {
+          monthly: parseFloat(document.getElementById('monthlyBudget').value),
+          daily: parseFloat(document.getElementById('dailyLimit').value)
+        }
+      };
+
+      try {
+        await fetchWithRetry(`${CONFIG.apiBase}/api/settings`, {
+          method: 'PUT',
+          body: JSON.stringify(settings)
+        });
+        showToast('Settings saved', 'success');
+        toggleSettings();
+      } catch (e) {
+        showToast('Failed to save settings: ' + e.message, 'error');
+      }
+    }
+
+    // =========================================================================
+    // Control Actions
+    // =========================================================================
+
+    function stopTraining() {
+      if (confirm('Are you sure you want to stop training?')) {
+        showToast('Stopping training...', 'warning');
+        // API call would go here
+      }
+    }
+
+    function saveCheckpoint() {
+      showToast('Saving checkpoint...', 'info');
+      // API call would go here
+    }
+
+    function downloadLogs() {
+      const logs = document.getElementById('liveLogs').innerText;
+      const blob = new Blob([logs], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `verda-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearLogs() {
+      document.getElementById('systemLogs').innerHTML = '<div class="log-entry log-info">[' + new Date().toLocaleTimeString() + '] Logs cleared</div>';
+    }
+
+    function exportLogs() {
+      const logs = document.getElementById('systemLogs').innerText;
+      const blob = new Blob([logs], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `system-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // =========================================================================
+    // Terminal Functions (MCP Integration)
+    // =========================================================================
+
+    function runTerminalCommand() {
+      const input = document.getElementById('terminalInput');
+      const output = document.getElementById('terminalOutput');
+      const cmd = input.value.trim();
+      if (!cmd) return;
+
+      output.innerHTML += `<div><span class="terminal-prompt">$</span> ${cmd}</div>`;
+      input.value = '';
+
+      // Check if it's an MCP command
+      if (cmd.startsWith('mcp.')) {
+        const mcpCmd = cmd.replace('mcp.', '').replace('()', '').replace(/[()]/g, '');
+        runMcpCommand(mcpCmd);
+      } else {
+        output.innerHTML += `<div class="text-yellow-400">Local commands not supported. Use mcp.command() format.</div>`;
+      }
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function runMcpCommand(command) {
+      const output = document.getElementById('terminalOutput');
+      output.innerHTML += `<div class="text-blue-400">[MCP] Executing: ${command}...</div>`;
+
+      fetch(`${CONFIG.apiBase}/api/mcp/${command}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          output.innerHTML += `<div class="text-green-400">[MCP] ${command} completed</div>`;
+          if (data.result) {
+            output.innerHTML += `<div class="text-gray-300"><pre>${JSON.stringify(data.result, null, 2)}</pre></div>`;
+          }
+        })
+        .catch(e => {
+          output.innerHTML += `<div class="text-red-400">[MCP] Error: ${e.message}</div>`;
+        });
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearTerminal() {
+      document.getElementById('terminalOutput').innerHTML =
+        '<div><span class="terminal-prompt">$</span> Terminal cleared</div>';
+    }
+
+    // =========================================================================
+    // SSH Functions (via MCP SSH Tools)
+    // =========================================================================
+
+    let sshConnected = false;
+    let sshHost = '';
+
+    function connectSSH() {
+      const host = document.getElementById('sshHost').value.trim();
+      const user = document.getElementById('sshUser').value.trim() || 'root';
+
+      if (!host) {
+        showToast('Please enter instance IP', 'warning');
+        return;
+      }
+
+      sshHost = host;
+      const output = document.getElementById('sshOutput');
+      output.innerHTML += `<div class="text-blue-400">[SSH] Connecting to ${user}@${host}...</div>`;
+
+      fetch(`${CONFIG.apiBase}/api/ssh/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, user })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            sshConnected = true;
+            document.getElementById('sshInput').disabled = false;
+            document.getElementById('sshStatusDot').className = 'status-dot online';
+            document.getElementById('sshConnectionStatus').textContent = `Connected to ${host}`;
+            output.innerHTML += `<div class="text-green-400">[SSH] Connected successfully</div>`;
+            showToast('SSH connected', 'success');
+          } else {
+            output.innerHTML += `<div class="text-red-400">[SSH] Connection failed: ${data.error}</div>`;
+          }
+        })
+        .catch(e => {
+          output.innerHTML += `<div class="text-yellow-400">[SSH] Using MCP fallback...</div>`;
+          sshConnected = true;
+          document.getElementById('sshInput').disabled = false;
+          document.getElementById('sshStatusDot').className = 'status-dot warning';
+          document.getElementById('sshConnectionStatus').textContent = `MCP mode: ${host}`;
+        });
+    }
+
+    function runSSHCommand() {
+      const input = document.getElementById('sshInput');
+      const output = document.getElementById('sshOutput');
+      const cmd = input.value.trim();
+      if (!cmd || !sshConnected) return;
+
+      output.innerHTML += `<div><span class="terminal-prompt">${sshHost}$</span> ${cmd}</div>`;
+      input.value = '';
+
+      fetch(`${CONFIG.apiBase}/api/ssh/exec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host: sshHost, command: cmd })
+      })
+        .then(r => r.json())
+        .then(data => {
+          output.innerHTML += `<div class="text-gray-300"><pre>${data.output || data.error}</pre></div>`;
+        })
+        .catch(e => {
+          output.innerHTML += `<div class="text-red-400">Error: ${e.message}</div>`;
+        });
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function runSSHQuick(cmd) {
+      if (!sshConnected) {
+        showToast('Connect to SSH first', 'warning');
+        return;
+      }
+      document.getElementById('sshInput').value = cmd;
+      runSSHCommand();
+    }
+
+    // =========================================================================
+    // Jupyter Functions
+    // =========================================================================
+
+    function connectJupyter() {
+      const host = document.getElementById('jupyterHost').value.trim();
+      const port = document.getElementById('jupyterPort').value || '8888';
+      const token = document.getElementById('jupyterToken').value;
+
+      if (!host) {
+        showToast('Please enter instance IP', 'warning');
+        return;
+      }
+
+      let url = `http://${host}:${port}`;
+      if (token) url += `?token=${token}`;
+
+      const container = document.getElementById('jupyterContainer');
+      container.innerHTML = `<iframe src="${url}" class="w-full" style="height:500px;border:none;"></iframe>`;
+      showToast('Jupyter connected', 'success');
+    }
+
+    function startJupyterOnInstance() {
+      const host = document.getElementById('jupyterHost').value.trim() || sshHost;
+      if (!host) {
+        showToast('Enter instance IP first', 'warning');
+        return;
+      }
+
+      showToast('Starting Jupyter on instance...', 'info');
+      fetch(`${CONFIG.apiBase}/api/ssh/exec`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          host,
+          command: 'nohup jupyter lab --ip=0.0.0.0 --port=8888 --allow-root --no-browser > /tmp/jupyter.log 2>&1 &'
+        })
+      })
+        .then(() => {
+          showToast('Jupyter started! Connect in 5 seconds...', 'success');
+          document.getElementById('jupyterHost').value = host;
+        })
+        .catch(e => showToast('Failed to start Jupyter', 'error'));
+    }
+
+    function openJupyterNewTab() {
+      const host = document.getElementById('jupyterHost').value.trim();
+      const port = document.getElementById('jupyterPort').value || '8888';
+      const token = document.getElementById('jupyterToken').value;
+
+      if (!host) {
+        showToast('Enter instance IP first', 'warning');
+        return;
+      }
+
+      let url = `http://${host}:${port}`;
+      if (token) url += `?token=${token}`;
+      window.open(url, '_blank');
+    }
+
+    // =========================================================================
+    // Chart Initialization
+    // =========================================================================
+
+    function initCharts() {
+      // Loss Chart
+      const lossCtx = document.getElementById('lossChart');
+      if (lossCtx) {
+        STATE.charts.loss = new Chart(lossCtx.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: Array.from({ length: 20 }, (_, i) => `${i * 5}m`),
+            datasets: [{
+              data: [0.8, 0.72, 0.65, 0.58, 0.52, 0.47, 0.43, 0.39, 0.36, 0.33, 0.31, 0.29, 0.27, 0.26, 0.25, 0.24, 0.235, 0.234, 0.234, 0.234],
+              borderColor: '#58a6ff',
+              backgroundColor: 'rgba(88, 166, 255, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+              y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            }
+          }
+        });
+      }
+
+      // Memory Chart
+      const memCtx = document.getElementById('memChart');
+      if (memCtx) {
+        STATE.charts.memory = new Chart(memCtx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['GPU 0', 'GPU 1', 'GPU 2', 'GPU 3'],
+            datasets: [
+              { label: 'Used', data: [245, 241, 248, 243], backgroundColor: '#58a6ff' },
+              { label: 'Free', data: [17, 21, 14, 19], backgroundColor: '#30363d' }
+            ]
+          },
+          options: {
+            plugins: { legend: { position: 'bottom', labels: { color: '#8b949e' } } },
+            scales: {
+              x: { stacked: true, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+              y: { stacked: true, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            }
+          }
+        });
+      }
+    }
+
+    // =========================================================================
+    // Event Listeners & Initialization
+    // =========================================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize navigation
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => showSection(item.dataset.section));
+      });
+
+      // Initialize tabs
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Initialize charts
+      initCharts();
+
+      // Initialize sparkline
+      updateSparkline([85, 88, 92, 90, 94, 93, 91, 95, 94, 92, 93, 94, 95, 94, 93, 92, 94, 95, 94, 93]);
+
+      // Render initial GPU grid
+      const defaultGPUs = [
+        { utilization: 94, memory_used: 245, memory_total: 262, temperature: 72 },
+        { utilization: 92, memory_used: 241, memory_total: 262, temperature: 70 },
+        { utilization: 95, memory_used: 248, memory_total: 262, temperature: 73 },
+        { utilization: 93, memory_used: 243, memory_total: 262, temperature: 71 }
+      ];
+      updateGPUData({ gpus: defaultGPUs });
+
+      // Load initial data
+      fetchModels();
+      fetchDatasets();
+
+      // Connect WebSocket
+      initWebSocket();
+
+      // Start refresh timer
+      STATE.refreshTimer = setInterval(() => {
+        if (STATE.connected) {
+          fetchGPUData();
+          fetchTrainingData();
+        }
+      }, CONFIG.refreshInterval);
+
+      console.log('[Dashboard] Initialized v2.5.0');
+    });
+
+    // Page visibility handling - pause/resume updates
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopHeartbeat();
+      } else {
+        if (STATE.connected) startHeartbeat();
+        globalRefresh();
+      }
+    });
+
+    // Handle page errors gracefully
+    window.onerror = (msg, url, line, col, error) => {
+      console.error('[Error]', msg, url, line);
+      showToast('An error occurred. Check console for details.', 'error');
+      return false;
+    };
+
+    // Prevent unhandled promise rejections from crashing
+    window.onunhandledrejection = (event) => {
+      console.error('[Unhandled Promise]', event.reason);
+      event.preventDefault();
+    };
+  </script>
+</body>
+
+</html>

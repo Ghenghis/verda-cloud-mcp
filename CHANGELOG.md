@@ -9,6 +9,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2026-01-08
+
+### 🎯 Final Polish Edition - Full Integration & Automation
+
+This release completes the Verda MCP Server with full dashboard integration,
+expanded model support, and production-ready features.
+
+#### 🌐 Dashboard API Server (NEW)
+
+- **FastAPI Backend** (`api_server.py`)
+  - REST endpoints for all settings (GET/PUT)
+  - WebSocket endpoint for real-time updates
+  - Settings persistence to `config.yaml`
+  - CORS support for browser access
+  - Health check and status endpoints
+
+- **Real-time Features**
+  - WebSocket connection manager with auto-reconnect
+  - Live GPU metrics broadcasting
+  - Training progress streaming
+  - Instant settings sync
+
+- **API Endpoints**
+  - `/api/health` - Health check
+  - `/api/status` - Overall status
+  - `/api/settings` - All settings (GET/PUT)
+  - `/api/settings/providers` - Provider configs
+  - `/api/settings/tools` - Tool toggles
+  - `/api/settings/training` - Training configs
+  - `/api/settings/alerts` - Notification configs
+  - `/api/settings/budget` - Budget settings
+  - `/api/gpu` - GPU metrics
+  - `/api/training` - Training status
+  - `/ws` - WebSocket real-time updates
+
+#### 📦 Model Hub Expansion (50+ Models)
+
+- **LLaMA Family**: 3, 3.1, 3.2 (1B to 405B)
+- **Mistral Family**: 7B, Nemo 12B, Mixtral 8x7B/8x22B
+- **Qwen Family**: 2, 2.5, Coder (0.5B to 72B)
+- **DeepSeek**: V2-Lite, Coder V2, V3 (671B MoE)
+- **Microsoft Phi**: 3, 3.5 (mini to medium)
+- **Google Gemma**: 2 (2B to 27B)
+- **Code Models**: CodeLlama, StarCoder2, Qwen2.5-Coder
+- **Vision**: SDXL, SD3, FLUX.1-dev/schnell
+- **Audio**: Whisper large-v3, v3-turbo
+- **Embeddings**: BGE, E5-Mistral, Nomic
+- **Multimodal**: LLaVA 1.6, Idefics2
+
+#### 🔧 LoRA/QLoRA Presets (Based on Research)
+
+- **7 LoRA Presets** (Sebastian Raschka's findings):
+  - `minimal`: r=8, quick experiments
+  - `standard`: r=16, balanced quality/speed
+  - `extended`: r=32, all attention layers
+  - `full`: r=64, includes lm_head
+  - `maximum`: r=256, alpha=512 (best quality)
+  - `qlora_4bit`: 75% VRAM reduction
+  - `qlora_8bit`: Memory-efficient training
+
+- **New Model Hub Actions**:
+  - `lora_config` - Get LoRA config for preset
+  - `qlora_config` - Get QLoRA 4-bit config
+  - `lora_presets` - List all presets with recommendations
+  - `category` - List models by category
+  - `stats` - Model hub statistics
+
+#### 🦙 Ollama Models Expansion (25+ Models)
+
+- LLaMA 3, 3.1, 3.2 variants
+- Qwen2, Qwen2.5, Qwen2.5-Coder
+- Gemma2 (2B, 9B, 27B)
+- DeepSeek-Coder, StarCoder2
+- Embedding models (nomic, mxbai)
+- Multimodal (LLaVA)
+
+#### 📊 Technical Highlights
+
+- **110+ visible tools** + **180+ bundled functions**
+- **50+ models** across 6 categories
+- **7 LoRA presets** based on research
+- **FastAPI + WebSocket** real-time dashboard
+- **Pydantic models** for type-safe configs
+- **Settings persistence** to config.yaml
+
+#### 🔌 New Dependencies (Optional)
+
+```toml
+[project.optional-dependencies]
+dashboard = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "websockets>=12.0",
+    "pydantic>=2.5.0",
+]
+```
+
+---
+
 ## [2.4.0] - 2026-01-08
 
 ### 🏢 Enterprise Edition - 7 Mega-Tools (84 Bundled Functions)

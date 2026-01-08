@@ -114,10 +114,10 @@ notify("training_complete", {{"final_loss": 0.123, "duration": "4h 32m"}})
 '''
 
     elif action == "training_start":
-        return f'# POST: {{"event": "training_start", "gpu": "...", "model": "...", "timestamp": "..."}}'
+        return '# POST: {"event": "training_start", "gpu": "...", "model": "...", "timestamp": "..."}'
 
     elif action == "training_complete":
-        return f'# POST: {{"event": "training_complete", "loss": 0.123, "duration": "4h", "cost": "$12.45"}}'
+        return '# POST: {"event": "training_complete", "loss": 0.123, "duration": "4h", "cost": "$12.45"}'
 
     elif action == "alert":
         return f'# POST: {{"event": "alert", "message": "{message or "Custom alert"}", "severity": "warning"}}'

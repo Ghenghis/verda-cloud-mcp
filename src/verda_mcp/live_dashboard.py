@@ -10,10 +10,12 @@ Features:
 - Notification center
 - Model hub browser
 - Interactive controls
+- Settings panel with provider configuration
+- Tool toggles for all MCP features
+- Fine-tuning configuration
+- Complete navigation sections
 """
 
-import json
-from datetime import datetime
 
 
 def live_dashboard(action: str = "generate", theme: str = "dark", **kwargs) -> str:
@@ -63,10 +65,11 @@ def _generate_full_dashboard(theme: str) -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verda Training Dashboard - Enterprise Edition</title>
+    <title>Verda Training Dashboard - Enterprise Edition v2.4.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg-primary: #0d1117;

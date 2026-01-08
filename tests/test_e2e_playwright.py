@@ -6,9 +6,7 @@ automated validation of all features.
 """
 
 import asyncio
-import os
 import sys
-from typing import Any
 
 import pytest
 
