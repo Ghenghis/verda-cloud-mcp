@@ -207,8 +207,8 @@ class VerdaMCPTestSuite:
 
             # Test spot savings calculation (should be ~75%)
             gpu = GPU_DATABASE.get("B300", {})
-            spot = gpu.get("spot_price", 0)
-            ondemand = gpu.get("ondemand_price", 0)
+            spot = gpu.get("spot", 0)
+            ondemand = gpu.get("on_demand", 0)
 
             if ondemand > 0:
                 savings = (1 - spot / ondemand) * 100
@@ -269,9 +269,12 @@ class VerdaMCPTestSuite:
             # Test training stages
             assert len(TrainingStage) == 10, "Should have 10 training stages"
 
-            # Test MetricsTranslator
-            translator = MetricsTranslator(SkillLevel.BEGINNER)
+            # Test MetricsTranslator (has static methods only)
+            translator = MetricsTranslator()
             assert translator is not None
+            # Test a static method works
+            result = MetricsTranslator.translate_loss(0.5, 1.0, SkillLevel.BEGINNER)
+            assert result is not None
 
             # Test StageCalculator
             calculator = StageCalculator()

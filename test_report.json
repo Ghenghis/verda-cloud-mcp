@@ -1,0 +1,175 @@
+{
+  "summary": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "success_rate": "100.0%",
+    "duration_ms": 3440.011,
+    "timestamp": "2026-01-08T00:07:12.558515"
+  },
+  "results": [
+    {
+      "name": "import_verda_mcp.server",
+      "status": "passed",
+      "duration_ms": 3439.8970000000004,
+      "message": "Successfully imported Main server module",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.client",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported Verda SDK client",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.config",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Configuration manager",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.ssh_tools",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported SSH remote access",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.gdrive_tools",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported Google Drive integration",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.watchdog",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported WatchDog monitor",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.extended_tools",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Extended utilities",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.spot_manager",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported Spot instance manager",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.training_tools",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Training automation",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.smart_deployer",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Smart deployment",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.training_intelligence",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported Training intelligence",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.gpu_optimizer",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Successfully imported GPU optimizer",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.live_data",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Live API data",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.advanced_tools",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Advanced beta features",
+      "details": {}
+    },
+    {
+      "name": "import_verda_mcp.testing_tools",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Successfully imported Testing utilities",
+      "details": {}
+    },
+    {
+      "name": "tool_definitions",
+      "status": "passed",
+      "duration_ms": 0.0,
+      "message": "All 87 tools defined correctly",
+      "details": {
+        "expected": 87,
+        "found": 87
+      }
+    },
+    {
+      "name": "gpu_database",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "All 12 GPU types present",
+      "details": {
+        "gpu_count": 12
+      }
+    },
+    {
+      "name": "cost_calculations",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Spot savings: 74.9%",
+      "details": {
+        "spot": 1.24,
+        "ondemand": 4.95,
+        "savings": 74.94949494949495
+      }
+    },
+    {
+      "name": "training_intelligence",
+      "status": "passed",
+      "duration_ms": 0.01,
+      "message": "All Training Intelligence components validated",
+      "details": {
+        "skill_levels": 7,
+        "output_formats": 7,
+        "training_stages": 10
+      }
+    },
+    {
+      "name": "smart_deployer",
+      "status": "passed",
+      "duration_ms": 0.002,
+      "message": "Smart Deployer components validated",
+      "details": {
+        "fail_safe_layers": 7
+      }
+    },
+    {
+      "name": "spot_manager",
+      "status": "passed",
+      "duration_ms": 0.001,
+      "message": "Spot Manager components validated",
+      "details": {}
+    }
+  ]
+}
