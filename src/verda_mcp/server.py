@@ -1579,6 +1579,201 @@ async def backup_checkpoint_to_gdrive(
 
 
 # =============================================================================
+# GPU Optimizer (Multi-GPU Spot Comparisons, Training Time Estimates)
+# =============================================================================
+
+try:
+    from .gpu_optimizer import (
+        compare_multi_gpu_spot,
+        find_best_gpu_config,
+        estimate_training_time,
+        list_all_gpus_detailed,
+    )
+    GPU_OPTIMIZER_AVAILABLE = True
+except ImportError:
+    GPU_OPTIMIZER_AVAILABLE = False
+
+
+@mcp.tool()
+async def spot_vs_ondemand_comparison(gpu_type: str = "B300", hours: float = 24) -> str:
+    """Compare multi-GPU SPOT vs single GPU On-Demand pricing.
+
+    KEY INSIGHT: With 75% spot savings, you can often get 3-4x GPUs
+    for the same price as 1x on-demand!
+
+    Args:
+        gpu_type: GPU type to compare (B300, H100, A6000, etc.).
+        hours: Training duration in hours.
+
+    Returns:
+        Detailed comparison showing multi-GPU spot value.
+    """
+    if not GPU_OPTIMIZER_AVAILABLE:
+        return "❌ GPU optimizer not available."
+    return await compare_multi_gpu_spot(gpu_type, hours)
+
+
+@mcp.tool()
+async def find_optimal_gpu(
+    model_size_billions: float,
+    budget_per_hour: float = 5.0,
+    prefer_spot: bool = True,
+) -> str:
+    """Find the best GPU configuration for your model and budget.
+
+    Analyzes all GPU options and recommends the best value configs.
+
+    Args:
+        model_size_billions: Model size in billions (7, 13, 30, 70, etc.).
+        budget_per_hour: Maximum budget per hour in USD.
+        prefer_spot: Prefer spot instances (default: True for savings!).
+
+    Returns:
+        Ranked list of GPU configurations by value.
+    """
+    if not GPU_OPTIMIZER_AVAILABLE:
+        return "❌ GPU optimizer not available."
+    return await find_best_gpu_config(model_size_billions, budget_per_hour, prefer_spot)
+
+
+@mcp.tool()
+async def estimate_training(
+    model_size_billions: float,
+    dataset_tokens_billions: float,
+    gpu_type: str = "A6000",
+    gpu_count: int = 1,
+) -> str:
+    """Estimate training time and cost for your configuration.
+
+    Args:
+        model_size_billions: Model size in billions of parameters.
+        dataset_tokens_billions: Dataset size in billions of tokens.
+        gpu_type: GPU type to use.
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+
+    Returns:
+        Time and cost estimates for spot and on-demand.
+    """
+    if not GPU_OPTIMIZER_AVAILABLE:
+        return "❌ GPU optimizer not available."
+    return await estimate_training_time(model_size_billions, dataset_tokens_billions, gpu_type, gpu_count)
+
+
+@mcp.tool()
+async def gpu_catalog() -> str:
+    """Show complete GPU catalog with specs, pricing, and recommendations.
+
+    Lists all 12 GPU types with:
+    - VRAM, architecture, TFLOPs
+    - On-demand and SPOT pricing
+    - Multi-GPU options
+    - Best use cases
+
+    Returns:
+        Complete GPU reference table.
+    """
+    if not GPU_OPTIMIZER_AVAILABLE:
+        return "❌ GPU optimizer not available."
+    return await list_all_gpus_detailed()
+
+
+# =============================================================================
+# Live Data (Auto-Updated from API)
+# =============================================================================
+
+try:
+    from .live_data import (
+        check_live_availability,
+        check_all_availability,
+        get_current_costs,
+        get_api_info,
+        refresh_data,
+    )
+    LIVE_DATA_AVAILABLE = True
+except ImportError:
+    LIVE_DATA_AVAILABLE = False
+
+
+@mcp.tool()
+async def live_gpu_availability(gpu_type: str = "A6000", gpu_count: int = 1) -> str:
+    """Check LIVE availability from Verda API.
+
+    Queries the API in real-time to check spot and on-demand availability
+    across all locations (FIN-01, FIN-02, FIN-03).
+
+    Args:
+        gpu_type: GPU type to check.
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+
+    Returns:
+        Live availability status by location.
+    """
+    if not LIVE_DATA_AVAILABLE:
+        return "❌ Live data not available."
+    return await check_live_availability(gpu_type, gpu_count)
+
+
+@mcp.tool()
+async def live_all_gpus_availability() -> str:
+    """Check LIVE availability for ALL GPU types.
+
+    Scans all GPU types across all locations to show what's
+    currently available for spot and on-demand.
+
+    Returns:
+        Availability matrix for all GPUs.
+    """
+    if not LIVE_DATA_AVAILABLE:
+        return "❌ Live data not available."
+    return await check_all_availability()
+
+
+@mcp.tool()
+async def current_running_costs() -> str:
+    """Get cost of currently running instances.
+
+    Checks your running instances and calculates current hourly/daily costs.
+
+    Returns:
+        Running instance costs breakdown.
+    """
+    if not LIVE_DATA_AVAILABLE:
+        return "❌ Live data not available."
+    return await get_current_costs()
+
+
+@mcp.tool()
+async def api_capabilities() -> str:
+    """Show what the Verda API can and cannot provide.
+
+    Explains which data is auto-updated from API vs manually cached.
+
+    Returns:
+        API capabilities and data freshness info.
+    """
+    if not LIVE_DATA_AVAILABLE:
+        return "❌ Live data not available."
+    return await get_api_info()
+
+
+@mcp.tool()
+async def refresh_live_data() -> str:
+    """Refresh all cached data from Verda API.
+
+    Forces a refresh of:
+    - GPU availability (all types/locations)
+    - Instance statuses
+    - Volume statuses
+
+    Returns:
+        Refresh status and summary.
+    """
+    if not LIVE_DATA_AVAILABLE:
+        return "❌ Live data not available."
+    return await refresh_data()
+
+
+# =============================================================================
 # Advanced Tools (Shared FS, Clusters, Batch Jobs - Beta)
 # =============================================================================
 
@@ -1852,6 +2047,16 @@ def main():
     else:
         features.append("❌ Training tools not available")
     
+    if GPU_OPTIMIZER_AVAILABLE:
+        features.append("✅ GPU Optimizer (4 tools): Multi-GPU Spot Comparisons, Training Estimates")
+    else:
+        features.append("❌ GPU optimizer not available")
+    
+    if LIVE_DATA_AVAILABLE:
+        features.append("✅ Live Data (5 tools): API Auto-Update, Availability, Costs")
+    else:
+        features.append("❌ Live data not available")
+    
     if ADVANCED_TOOLS_AVAILABLE:
         features.append("✅ Advanced Tools (7 tools): Shared FS, Clusters, Batch Jobs (Beta)")
     else:
@@ -1873,9 +2078,11 @@ def main():
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
     training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
-    advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0  # shared fs x2, clusters x2, batch x3
+    gpu_optimizer_tools = 4 if GPU_OPTIMIZER_AVAILABLE else 0
+    live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
+    advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + advanced_tools + testing_tools
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + gpu_optimizer_tools + live_data_tools + advanced_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
