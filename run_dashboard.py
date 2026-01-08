@@ -16,19 +16,22 @@ import sys
 
 # Add src to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(script_dir, 'src'))
+sys.path.insert(0, os.path.join(script_dir, "src"))
+
 
 def install_dependencies():
     """Install missing dependencies."""
     import subprocess
-    packages = ['fastapi', 'uvicorn', 'websockets', 'pydantic']
+
+    packages = ["fastapi", "uvicorn", "websockets", "pydantic"]
     print("📦 Installing missing dependencies...")
     for pkg in packages:
         try:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', pkg, '-q'])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
             print(f"   ✅ {pkg}")
         except Exception as e:
             print(f"   ❌ {pkg}: {e}")
+
 
 def main():
     print("""
@@ -40,6 +43,7 @@ def main():
     # Try to import and run
     try:
         from verda_mcp.api_server import quick_start
+
         quick_start()
     except ImportError as e:
         print(f"⚠️  Import error: {e}")
@@ -47,10 +51,11 @@ def main():
         # Offer to install dependencies
         try:
             response = input("\n📦 Install missing dependencies? (y/n): ").strip().lower()
-            if response == 'y':
+            if response == "y":
                 install_dependencies()
                 print("\n🔄 Retrying...")
                 from verda_mcp.api_server import quick_start
+
                 quick_start()
             else:
                 print("\nManual install: pip install fastapi uvicorn websockets pydantic")
@@ -62,15 +67,17 @@ def main():
     except Exception as e:
         print(f"\n❌ Unexpected error: {e}")
         import traceback
+
         traceback.print_exc()
 
         # Offer retry
         try:
             response = input("\n🔄 Retry? (y/n): ").strip().lower()
-            if response == 'y':
+            if response == "y":
                 main()
         except Exception:
             pass
+
 
 if __name__ == "__main__":
     main()
