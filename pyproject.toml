@@ -1,7 +1,7 @@
 [project]
 name = "verda-cloud-mcp"
-version = "2.5.0"
-description = "Enterprise MCP server for Verda Cloud GPU management - 110+ visible tools + 180+ bundled functions, model hub (50+ models), live dashboard API, QLoRA/LoRA presets, WebSocket real-time updates"
+version = "2.6.0"
+description = "COMPACT MCP server for Verda Cloud GPU management - 21 mega-tools with 200+ capabilities, action-based interface, model hub, dataset hub, live dashboard, all GPU training features"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
