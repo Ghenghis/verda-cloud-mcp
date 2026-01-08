@@ -909,6 +909,112 @@ async def remote_kill_training(instance_ip: str) -> str:
 
 
 # =============================================================================
+# Extended Tools (Cost, Health, Logs, Checkpoints)
+# =============================================================================
+
+try:
+    from .extended_tools import (
+        estimate_training_cost,
+        parse_training_logs,
+        health_check,
+        list_instance_checkpoints,
+        backup_latest_checkpoint,
+    )
+    EXTENDED_TOOLS_AVAILABLE = True
+except ImportError:
+    EXTENDED_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def cost_estimate(
+    gpu_type: str = "B300",
+    gpu_count: int = 1,
+    hours: float = 20,
+    is_spot: bool = True,
+) -> str:
+    """Estimate training cost before deployment.
+
+    Args:
+        gpu_type: GPU type (B300, B200, H200, etc.).
+        gpu_count: Number of GPUs.
+        hours: Expected training hours.
+        is_spot: Whether using spot pricing.
+
+    Returns:
+        Cost breakdown and comparison.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE:
+        return "❌ Extended tools not available."
+    return await estimate_training_cost(gpu_type, gpu_count, hours, is_spot)
+
+
+@mcp.tool()
+async def analyze_training_logs(instance_ip: str, log_lines: int = 200) -> str:
+    """Parse and analyze training logs to extract metrics.
+
+    Extracts steps, losses, learning rates, checkpoints, errors, and warnings.
+
+    Args:
+        instance_ip: IP address of the instance.
+        log_lines: Number of log lines to analyze.
+
+    Returns:
+        Parsed metrics summary.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ Required tools not available."
+    return await parse_training_logs(instance_ip, log_lines)
+
+
+@mcp.tool()
+async def instance_health_check(instance_ip: str) -> str:
+    """Perform comprehensive health check on an instance.
+
+    Checks GPU, disk, memory, training process, and network health.
+
+    Args:
+        instance_ip: IP address of the instance.
+
+    Returns:
+        Health check report with status for each component.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ Required tools not available."
+    return await health_check(instance_ip)
+
+
+@mcp.tool()
+async def list_checkpoints(instance_ip: str) -> str:
+    """List available training checkpoints on an instance.
+
+    Args:
+        instance_ip: IP address of the instance.
+
+    Returns:
+        List of checkpoints with names, sizes, and dates.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ Required tools not available."
+    return await list_instance_checkpoints(instance_ip)
+
+
+@mcp.tool()
+async def backup_checkpoint(instance_ip: str, local_dir: str) -> str:
+    """Backup the latest checkpoint from instance to local machine.
+
+    Args:
+        instance_ip: IP address of the instance.
+        local_dir: Local directory to save checkpoint.
+
+    Returns:
+        Backup status.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ Required tools not available."
+    return await backup_latest_checkpoint(instance_ip, local_dir)
+
+
+# =============================================================================
 # Google Drive & File Transfer Tools (NEW!)
 # =============================================================================
 
@@ -1134,6 +1240,7 @@ def main():
     """Run the MCP server."""
     logger.info("=" * 60)
     logger.info("🚀 Verda Cloud MCP Server (Enhanced Edition)")
+    logger.info("   Full GPU Training Automation Suite")
     logger.info("=" * 60)
     
     # Feature status
@@ -1153,9 +1260,23 @@ def main():
     else:
         features.append("❌ WatchDog not available")
     
+    if EXTENDED_TOOLS_AVAILABLE:
+        features.append("✅ Extended Tools (5 tools): Cost, Health, Logs, Checkpoints")
+    else:
+        features.append("❌ Extended tools not available")
+    
     for f in features:
         logger.info(f)
     
+    # Count total tools
+    base_tools = 20  # Original tools
+    ssh_tools = 8 if SSH_TOOLS_AVAILABLE else 0
+    gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
+    watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
+    extended_tools = 5 if EXTENDED_TOOLS_AVAILABLE else 0
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools
+    
+    logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
     mcp.run(transport="stdio")
 
