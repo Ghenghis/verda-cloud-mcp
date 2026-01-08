@@ -117,6 +117,14 @@ defaults:
   gpu_type: "B300"
   volume_id: "your-volume-id"  # Optional
   script_id: "your-script-id"  # Optional
+  image: "ubuntu-24.04-cuda-12.8-open-docker"
+  hostname_prefix: "spot-gpu"
+
+# Optional: Deployment behavior
+deployment:
+  ready_timeout: 600  # Max seconds to wait for instance
+  poll_interval: 10   # Seconds between status checks
+  use_spot: true      # Default to spot instances
 ```
 
 ### 3. Run the server
@@ -128,6 +136,22 @@ uv run python -m verda_mcp
 # Or directly
 python -m verda_mcp
 ```
+
+### 4. Launch the Dashboard (Optional)
+
+```bash
+# Start the live dashboard server
+python run_dashboard.py
+
+# Opens at http://localhost:8765
+```
+
+**Dashboard Features:**
+- 📊 Real-time GPU metrics via WebSocket
+- 🖥️ Terminal panel for MCP commands
+- 🔌 SSH panel for remote instance access
+- 📓 Jupyter notebook integration
+- ⚙️ Settings panel for configuration
 
 ## Claude Desktop Configuration
 

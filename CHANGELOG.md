@@ -85,14 +85,48 @@ expanded model support, and production-ready features.
 - Embedding models (nomic, mxbai)
 - Multimodal (LLaVA)
 
+#### 🖥️ Live Dashboard UI
+
+- **Enterprise Dashboard** (`dashboard.html`)
+  - Compact sidebar with 11 navigation items
+  - GPU metrics with real-time updates
+  - Training status and progress display
+  - Terminal panel for MCP commands
+  - SSH panel for remote instance access
+  - Jupyter panel for notebook integration
+  - Settings panel with providers/tools/alerts
+
+- **Real API Integration**
+  - `/api/connect` - Connect to real Verda instance
+  - `/api/ssh/exec` - Execute SSH commands
+  - `/api/mcp/{command}` - Run MCP tools from UI
+  - GPU refresh uses real `nvidia-smi` via SSH
+  - Falls back to demo data when disconnected
+
+#### 🧪 Playwright Test Suite
+
+- **Dashboard UI Tests** (`test_dashboard_ui.py`)
+  - Tests all UI sections load correctly
+  - Validates JavaScript functions exist
+  - Tests API health and GPU endpoints
+  - 10/10 tests passing
+
+- **Integration Tests** (`test_playwright_integration.py`)
+  - 15 module import tests
+  - GPU database validation (12 types)
+  - Cost calculation tests (75% savings)
+  - Training Intelligence validation
+  - 21/21 tests passing (100%)
+
 #### 📊 Technical Highlights
 
-- **110+ visible tools** + **180+ bundled functions**
+- **87 tools** + **140+ bundled functions**
 - **50+ models** across 6 categories
 - **7 LoRA presets** based on research
 - **FastAPI + WebSocket** real-time dashboard
 - **Pydantic models** for type-safe configs
 - **Settings persistence** to config.yaml
+- **100% test pass rate** with Playwright
 
 #### 🔌 New Dependencies (Optional)
 
