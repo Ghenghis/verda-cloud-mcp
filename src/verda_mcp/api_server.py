@@ -24,6 +24,7 @@ try:
     FASTAPI_AVAILABLE = True
 except ImportError:
     FASTAPI_AVAILABLE = False
+    BaseModel = object  # Fallback for when pydantic not available
 
 
 from .config import get_config, update_config_file
@@ -34,7 +35,6 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Pydantic Models for API
 # =============================================================================
-
 
 class ProviderConfig(BaseModel):
     """Provider configuration model."""

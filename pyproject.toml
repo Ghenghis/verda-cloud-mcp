@@ -40,6 +40,8 @@ dependencies = [
     "verda>=1.18.0",
     "paramiko>=3.0.0",
     "aiohttp>=3.9.0",
+    "fastapi>=0.109.0",
+    "pydantic>=2.5.0",
 ]
 
 [project.urls]
