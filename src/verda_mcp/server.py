@@ -919,6 +919,8 @@ try:
         health_check,
         list_instance_checkpoints,
         backup_latest_checkpoint,
+        list_all_gpus,
+        recommend_gpu_for_model,
     )
     EXTENDED_TOOLS_AVAILABLE = True
 except ImportError:
@@ -1012,6 +1014,45 @@ async def backup_checkpoint(instance_ip: str, local_dir: str) -> str:
     if not EXTENDED_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
         return "❌ Required tools not available."
     return await backup_latest_checkpoint(instance_ip, local_dir)
+
+
+@mcp.tool()
+async def list_available_gpus() -> str:
+    """List ALL available Verda GPUs with pricing, VRAM, and multi-GPU options.
+
+    Shows complete GPU catalog including:
+    - NVLink GPUs: GB300, B300, B200, H200, H100, A100, V100
+    - General Compute: RTX PRO 6000, L40S, RTX 6000 Ada, RTX A6000
+
+    Returns:
+        Table of all GPUs sorted by price with specs.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE:
+        return "❌ Extended tools not available."
+    return await list_all_gpus()
+
+
+@mcp.tool()
+async def recommend_gpu(
+    model_size_billions: float,
+    budget_per_hour: float = 0,
+) -> str:
+    """Recommend GPU configuration based on model size and budget.
+
+    Analyzes model VRAM requirements and suggests optimal GPU configs
+    including single and multi-GPU options (1, 2, 4, 8 GPUs).
+
+    Args:
+        model_size_billions: Model size in billions of parameters (e.g., 7, 13, 70).
+        budget_per_hour: Optional max budget per hour in USD. 0 = no limit.
+
+    Returns:
+        Recommended configurations sorted by cost.
+    """
+    if not EXTENDED_TOOLS_AVAILABLE:
+        return "❌ Extended tools not available."
+    budget = budget_per_hour if budget_per_hour > 0 else None
+    return await recommend_gpu_for_model(model_size_billions, budget)
 
 
 # =============================================================================
@@ -1335,7 +1376,7 @@ def main():
         features.append("❌ WatchDog not available")
     
     if EXTENDED_TOOLS_AVAILABLE:
-        features.append("✅ Extended Tools (5 tools): Cost, Health, Logs, Checkpoints")
+        features.append("✅ Extended Tools (7 tools): Cost, Health, Logs, Checkpoints, GPU List, Recommendations")
     else:
         features.append("❌ Extended tools not available")
     
@@ -1352,7 +1393,7 @@ def main():
     ssh_tools = 8 if SSH_TOOLS_AVAILABLE else 0
     gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
-    extended_tools = 5 if EXTENDED_TOOLS_AVAILABLE else 0
+    extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0  # +2: list_gpus, recommend_gpu
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
     total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + testing_tools
     

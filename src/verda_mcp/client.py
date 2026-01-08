@@ -38,28 +38,120 @@ def get_instance_type_from_gpu_type_and_count(
     Returns:
         Instance type string (e.g., "1B300.30V") or empty string if not found.
     """
+    # =========================================================================
+    # COMPLETE VERDA GPU CATALOG - All models with multi-GPU configurations
+    # Updated: January 2026
+    # =========================================================================
     mapping = {
+        # -----------------------------------------------------------------
+        # NVLink GPUs (High-Performance AI/ML)
+        # -----------------------------------------------------------------
+        # GB300 - 288GB VRAM - Coming Soon
+        "GB300": {
+            1: "1GB300.36V",
+            2: "2GB300.72V",
+            4: "4GB300.144V",
+        },
+        # B300 - 262GB VRAM - $4.95/hr per GPU
         "B300": {
             1: "1B300.30V",
             2: "2B300.60V",
             4: "4B300.120V",
             8: "8B300.240V",
         },
+        # B200 - 180GB VRAM - $3.79/hr per GPU
         "B200": {
             1: "1B200.30V",
             2: "2B200.60V",
             4: "4B200.120V",
             8: "8B200.240V",
         },
-        "GB300": {
-            1: "1GB300.36V",
-            2: "2GB300.72V",
-            4: "4GB300.144V",
-        },
+        # H200 - 141GB VRAM - $2.99/hr per GPU
         "H200": {
-            1: "1H200.141S.44V",
+            1: "1H200.18V",
+            2: "2H200.36V",
+            4: "4H200.72V",
+            8: "8H200.144V",
         },
-        # Budget-friendly options for testing
+        # H100 - 80GB VRAM - $2.29/hr per GPU
+        "H100": {
+            1: "1H100.10V",
+            2: "2H100.20V",
+            4: "4H100.40V",
+            8: "8H100.80V",
+        },
+        # A100 80GB - $1.29/hr per GPU
+        "A100_80G": {
+            1: "1A100_80G.10V",
+            2: "2A100_80G.20V",
+            4: "4A100_80G.40V",
+            8: "8A100_80G.80V",
+        },
+        "A100-80G": {
+            1: "1A100_80G.10V",
+            2: "2A100_80G.20V",
+            4: "4A100_80G.40V",
+            8: "8A100_80G.80V",
+        },
+        # A100 40GB - $0.7211/hr per GPU
+        "A100_40G": {
+            1: "1A100_40G.10V",
+            8: "8A100_40G.80V",
+        },
+        "A100-40G": {
+            1: "1A100_40G.10V",
+            8: "8A100_40G.80V",
+        },
+        # Tesla V100 - 16GB VRAM - $0.1381/hr per GPU (CHEAPEST!)
+        "V100": {
+            1: "1V100.10V",
+            2: "2V100.20V",
+            4: "4V100.40V",
+            8: "8V100.80V",
+        },
+        "TESLA_V100": {
+            1: "1V100.10V",
+            2: "2V100.20V",
+            4: "4V100.40V",
+            8: "8V100.80V",
+        },
+        # -----------------------------------------------------------------
+        # General Compute GPUs
+        # -----------------------------------------------------------------
+        # RTX PRO 6000 - 96GB VRAM - $1.39/hr per GPU
+        "RTX_PRO_6000": {
+            1: "1RTXPRO6000.12V",
+            2: "2RTXPRO6000.24V",
+            4: "4RTXPRO6000.48V",
+            8: "8RTXPRO6000.96V",
+        },
+        "RTXPRO6000": {
+            1: "1RTXPRO6000.12V",
+            2: "2RTXPRO6000.24V",
+            4: "4RTXPRO6000.48V",
+            8: "8RTXPRO6000.96V",
+        },
+        # L40S - 48GB VRAM - $0.9143/hr per GPU
+        "L40S": {
+            1: "1L40S.12V",
+            2: "2L40S.24V",
+            4: "4L40S.48V",
+            8: "8L40S.96V",
+        },
+        # RTX 6000 Ada - 48GB VRAM - $0.8262/hr per GPU
+        "RTX_6000_ADA": {
+            1: "1RTX6000Ada.12V",
+            2: "2RTX6000Ada.24V",
+            4: "4RTX6000Ada.48V",
+            8: "8RTX6000Ada.96V",
+        },
+        "RTX6000ADA": {
+            1: "1RTX6000Ada.12V",
+            2: "2RTX6000Ada.24V",
+            4: "4RTX6000Ada.48V",
+            8: "8RTX6000Ada.96V",
+        },
+        # RTX A6000 - 48GB VRAM - $0.49/hr per GPU (BEST VALUE!)
         "A6000": {
             1: "1A6000.10V",
             2: "2A6000.20V",
@@ -71,12 +163,6 @@ def get_instance_type_from_gpu_type_and_count(
             2: "2A6000.20V",
             4: "4A6000.40V",
             8: "8A6000.80V",
-        },
-        "L40S": {
-            1: "1L40S.12V",
-            2: "2L40S.24V",
-            4: "4L40S.48V",
-            8: "8L40S.96V",
         },
     }
     return mapping.get(gpu_type.upper(), {}).get(gpu_count, "")

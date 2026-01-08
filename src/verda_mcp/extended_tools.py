@@ -13,20 +13,55 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-# GPU Pricing (USD per hour) - Updated Jan 2026
+# =============================================================================
+# COMPLETE VERDA GPU PRICING - All models (USD per hour per GPU)
+# Updated: January 2026
+# Note: Verda now uses FIXED pricing only (no spot)
+# =============================================================================
 GPU_PRICING = {
-    "B300": {"on_demand": 4.95, "spot": 1.24},
-    "B200": {"on_demand": 3.79, "spot": 0.95},
-    "GB300": {"on_demand": 5.95, "spot": 1.49},
-    "H200": {"on_demand": 2.99, "spot": 0.75},
-    "H100": {"on_demand": 2.49, "spot": 0.62},
-    "L40S": {"on_demand": 1.19, "spot": 0.30},
-    "A100_80G": {"on_demand": 1.89, "spot": 0.47},
-    # Budget options
-    "A6000": {"on_demand": 0.49, "spot": 0.49},  # Fixed pricing only
-    "RTX_A6000": {"on_demand": 0.49, "spot": 0.49},
-    "RTX6000ADA": {"on_demand": 0.93, "spot": 0.93},
-    "V100": {"on_demand": 0.44, "spot": 0.44},
+    # -----------------------------------------------------------------
+    # NVLink GPUs (High-Performance AI/ML)
+    # -----------------------------------------------------------------
+    "GB300": {"on_demand": 5.45, "vram_gb": 288, "multi_gpu": [1, 2, 4]},
+    "B300": {"on_demand": 4.95, "vram_gb": 262, "multi_gpu": [1, 2, 4, 8]},
+    "B200": {"on_demand": 3.79, "vram_gb": 180, "multi_gpu": [1, 2, 4, 8]},
+    "H200": {"on_demand": 2.99, "vram_gb": 141, "multi_gpu": [1, 2, 4, 8]},
+    "H100": {"on_demand": 2.29, "vram_gb": 80, "multi_gpu": [1, 2, 4, 8]},
+    "A100_80G": {"on_demand": 1.29, "vram_gb": 80, "multi_gpu": [1, 2, 4, 8]},
+    "A100-80G": {"on_demand": 1.29, "vram_gb": 80, "multi_gpu": [1, 2, 4, 8]},
+    "A100_40G": {"on_demand": 0.7211, "vram_gb": 40, "multi_gpu": [1, 8]},
+    "A100-40G": {"on_demand": 0.7211, "vram_gb": 40, "multi_gpu": [1, 8]},
+    "V100": {"on_demand": 0.1381, "vram_gb": 16, "multi_gpu": [1, 2, 4, 8]},
+    "TESLA_V100": {"on_demand": 0.1381, "vram_gb": 16, "multi_gpu": [1, 2, 4, 8]},
+    # -----------------------------------------------------------------
+    # General Compute GPUs
+    # -----------------------------------------------------------------
+    "RTX_PRO_6000": {"on_demand": 1.39, "vram_gb": 96, "multi_gpu": [1, 2, 4, 8]},
+    "RTXPRO6000": {"on_demand": 1.39, "vram_gb": 96, "multi_gpu": [1, 2, 4, 8]},
+    "L40S": {"on_demand": 0.9143, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8]},
+    "RTX_6000_ADA": {"on_demand": 0.8262, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8]},
+    "RTX6000ADA": {"on_demand": 0.8262, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8]},
+    "A6000": {"on_demand": 0.49, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8]},
+    "RTX_A6000": {"on_demand": 0.49, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8]},
+}
+
+# GPU Categories for recommendations
+GPU_CATEGORIES = {
+    "nvlink_high_end": ["GB300", "B300", "B200"],
+    "nvlink_mid": ["H200", "H100"],
+    "nvlink_budget": ["A100_80G", "A100_40G", "V100"],
+    "general_high": ["RTX_PRO_6000"],
+    "general_mid": ["L40S", "RTX_6000_ADA"],
+    "general_budget": ["A6000"],
+}
+
+# Model size to GPU recommendations
+MODEL_SIZE_RECOMMENDATIONS = {
+    "7B": {"min_vram": 16, "recommended": ["A6000", "L40S", "V100"]},
+    "13B": {"min_vram": 32, "recommended": ["A6000", "L40S", "A100_40G"]},
+    "30B": {"min_vram": 64, "recommended": ["A100_80G", "H100", "2xA6000"]},
+    "70B": {"min_vram": 140, "recommended": ["H200", "2xA100_80G", "4xA6000"]},
+    "180B+": {"min_vram": 256, "recommended": ["B300", "B200", "8xA100_80G"]},
 }
 
 
@@ -38,7 +73,7 @@ class CostEstimator:
         gpu_type: str,
         gpu_count: int,
         hours: float,
-        is_spot: bool = True,
+        is_spot: bool = False,  # Verda now uses fixed pricing only
     ) -> Dict[str, Any]:
         """Estimate training cost.
         
@@ -46,51 +81,189 @@ class CostEstimator:
             gpu_type: GPU type (B300, B200, etc.)
             gpu_count: Number of GPUs
             hours: Expected training hours
-            is_spot: Whether using spot pricing
+            is_spot: Deprecated - Verda uses fixed pricing only
         
         Returns:
             Cost breakdown dictionary.
         """
-        pricing = GPU_PRICING.get(gpu_type.upper(), {"on_demand": 0, "spot": 0})
-        rate_type = "spot" if is_spot else "on_demand"
-        hourly_rate = pricing[rate_type] * gpu_count
+        gpu_key = gpu_type.upper().replace("-", "_")
+        pricing = GPU_PRICING.get(gpu_key, {"on_demand": 0, "vram_gb": 0, "multi_gpu": [1]})
+        
+        hourly_rate = pricing["on_demand"] * gpu_count
         total_cost = hourly_rate * hours
+        vram_total = pricing.get("vram_gb", 0) * gpu_count
         
         return {
             "gpu_type": gpu_type,
             "gpu_count": gpu_count,
             "hours": hours,
-            "is_spot": is_spot,
             "hourly_rate": hourly_rate,
             "total_cost": total_cost,
-            "comparison": {
-                "spot_total": pricing["spot"] * gpu_count * hours,
-                "on_demand_total": pricing["on_demand"] * gpu_count * hours,
-                "savings_with_spot": (pricing["on_demand"] - pricing["spot"]) * gpu_count * hours,
-            }
+            "vram_total_gb": vram_total,
+            "per_gpu_cost": pricing["on_demand"],
+            "multi_gpu_options": pricing.get("multi_gpu", [1]),
+        }
+    
+    @staticmethod
+    def list_all_gpus() -> Dict[str, Any]:
+        """List all available GPUs with pricing and specs."""
+        gpus = []
+        seen = set()
+        
+        for gpu_name, info in GPU_PRICING.items():
+            # Skip aliases
+            clean_name = gpu_name.replace("-", "_").upper()
+            if clean_name in seen:
+                continue
+            seen.add(clean_name)
+            
+            gpus.append({
+                "name": gpu_name,
+                "price_per_hour": info["on_demand"],
+                "vram_gb": info.get("vram_gb", 0),
+                "multi_gpu": info.get("multi_gpu", [1]),
+            })
+        
+        # Sort by price
+        gpus.sort(key=lambda x: x["price_per_hour"])
+        return {"gpus": gpus, "count": len(gpus)}
+    
+    @staticmethod
+    def recommend_gpu(model_size_billions: float, budget_per_hour: float = None) -> Dict[str, Any]:
+        """Recommend GPU based on model size and budget.
+        
+        Args:
+            model_size_billions: Model size in billions of parameters
+            budget_per_hour: Optional max budget per hour
+        
+        Returns:
+            Recommendations with explanations.
+        """
+        # Estimate VRAM needed (rough: 2GB per billion params for inference, 4GB for training)
+        vram_needed = model_size_billions * 4  # For training with gradients
+        
+        recommendations = []
+        
+        for gpu_name, info in GPU_PRICING.items():
+            # Skip aliases
+            if "-" in gpu_name:
+                continue
+                
+            vram = info.get("vram_gb", 0)
+            price = info["on_demand"]
+            multi_gpu = info.get("multi_gpu", [1])
+            
+            # Check if budget allows
+            if budget_per_hour and price > budget_per_hour:
+                continue
+            
+            # Single GPU fits
+            if vram >= vram_needed:
+                recommendations.append({
+                    "config": f"1x {gpu_name}",
+                    "total_vram": vram,
+                    "hourly_cost": price,
+                    "fits": True,
+                    "note": "Single GPU sufficient"
+                })
+            
+            # Check multi-GPU configs
+            for count in multi_gpu:
+                if count == 1:
+                    continue
+                total_vram = vram * count
+                total_cost = price * count
+                
+                if budget_per_hour and total_cost > budget_per_hour:
+                    continue
+                    
+                if total_vram >= vram_needed:
+                    recommendations.append({
+                        "config": f"{count}x {gpu_name}",
+                        "total_vram": total_vram,
+                        "hourly_cost": total_cost,
+                        "fits": True,
+                        "note": f"Multi-GPU: {count} GPUs"
+                    })
+        
+        # Sort by cost
+        recommendations.sort(key=lambda x: x["hourly_cost"])
+        
+        return {
+            "model_size_b": model_size_billions,
+            "vram_needed_gb": vram_needed,
+            "budget_per_hour": budget_per_hour,
+            "recommendations": recommendations[:10],  # Top 10
         }
     
     @staticmethod
     def format_estimate(estimate: Dict[str, Any]) -> str:
         """Format estimate for display."""
+        vram = estimate.get('vram_total_gb', 0)
+        multi = estimate.get('multi_gpu_options', [1])
+        
         return f"""# 💰 Cost Estimate
 
 ## Configuration
 - **GPU**: {estimate['gpu_type']} x{estimate['gpu_count']}
+- **Total VRAM**: {vram} GB
 - **Duration**: {estimate['hours']} hours
-- **Pricing**: {'Spot' if estimate['is_spot'] else 'On-Demand'}
+- **Available configs**: {multi}
 
 ## Cost Breakdown
+- **Per GPU**: ${estimate.get('per_gpu_cost', 0):.4f}/hr
 - **Hourly Rate**: ${estimate['hourly_rate']:.2f}/hr
-- **Total Cost**: ${estimate['total_cost']:.2f}
-
-## Comparison
-| Pricing Type | Total Cost |
-|--------------|------------|
-| Spot | ${estimate['comparison']['spot_total']:.2f} |
-| On-Demand | ${estimate['comparison']['on_demand_total']:.2f} |
-| **Savings with Spot** | ${estimate['comparison']['savings_with_spot']:.2f} |
-"""
+- **Total Cost**: ${estimate['total_cost']:.2f}"""
+    
+    @staticmethod
+    def format_gpu_list(gpu_data: Dict[str, Any]) -> str:
+        """Format GPU list for display."""
+        lines = [
+            "# 🖥️ Available Verda GPUs",
+            "",
+            "| GPU | VRAM | $/hr | Multi-GPU Options |",
+            "|-----|------|------|-------------------|",
+        ]
+        
+        for gpu in gpu_data["gpus"]:
+            multi = ", ".join(str(x) for x in gpu["multi_gpu"])
+            lines.append(f"| {gpu['name']} | {gpu['vram_gb']}GB | ${gpu['price_per_hour']:.4f} | {multi} |")
+        
+        lines.append("")
+        lines.append(f"**Total GPUs**: {gpu_data['count']}")
+        lines.append("")
+        lines.append("*Note: Verda uses fixed pricing (no spot instances)*")
+        
+        return "\n".join(lines)
+    
+    @staticmethod
+    def format_recommendations(rec_data: Dict[str, Any]) -> str:
+        """Format GPU recommendations for display."""
+        lines = [
+            "# 🎯 GPU Recommendations",
+            "",
+            f"**Model Size**: {rec_data['model_size_b']}B parameters",
+            f"**VRAM Needed**: ~{rec_data['vram_needed_gb']:.0f}GB (for training)",
+        ]
+        
+        if rec_data.get('budget_per_hour'):
+            lines.append(f"**Budget**: ${rec_data['budget_per_hour']:.2f}/hr max")
+        
+        lines.extend([
+            "",
+            "## Recommended Configurations",
+            "",
+            "| Config | Total VRAM | $/hr | Notes |",
+            "|--------|------------|------|-------|",
+        ])
+        
+        for rec in rec_data["recommendations"]:
+            lines.append(f"| {rec['config']} | {rec['total_vram']}GB | ${rec['hourly_cost']:.2f} | {rec['note']} |")
+        
+        if not rec_data["recommendations"]:
+            lines.append("| *No configurations found within budget* | - | - | - |")
+        
+        return "\n".join(lines)
 
 
 class TrainingLogParser:
@@ -523,3 +696,17 @@ async def backup_latest_checkpoint(instance_ip: str, local_dir: str) -> str:
     local_path = f"{local_dir}/{latest['name']}"
     
     return await manager.backup_checkpoint(instance_ip, checkpoint_path, local_path)
+
+
+async def list_all_gpus() -> str:
+    """List all available GPUs with pricing and specs."""
+    estimator = CostEstimator()
+    gpu_data = estimator.list_all_gpus()
+    return estimator.format_gpu_list(gpu_data)
+
+
+async def recommend_gpu_for_model(model_size_billions: float, budget_per_hour: float = None) -> str:
+    """Recommend GPU configuration for a model size."""
+    estimator = CostEstimator()
+    recommendations = estimator.recommend_gpu(model_size_billions, budget_per_hour)
+    return estimator.format_recommendations(recommendations)
