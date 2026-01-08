@@ -1579,6 +1579,162 @@ async def backup_checkpoint_to_gdrive(
 
 
 # =============================================================================
+# Advanced Tools (Shared FS, Clusters, Batch Jobs - Beta)
+# =============================================================================
+
+try:
+    from .advanced_tools import (
+        list_shared_filesystems,
+        create_shared_filesystem,
+        list_clusters,
+        create_cluster,
+        list_batch_jobs,
+        create_batch_job,
+        get_batch_job_logs,
+    )
+    ADVANCED_TOOLS_AVAILABLE = True
+except ImportError:
+    ADVANCED_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def shared_filesystems() -> str:
+    """List all shared filesystems (Beta).
+
+    Shared filesystems can be mounted to multiple instances simultaneously.
+    Ideal for distributed training with shared datasets.
+
+    Returns:
+        List of shared filesystems with details.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await list_shared_filesystems()
+
+
+@mcp.tool()
+async def create_shared_fs(
+    name: str,
+    size_gb: int = 100,
+    location: str = "FIN-01",
+) -> str:
+    """Create a new shared filesystem (Beta).
+
+    Creates a filesystem that can be shared between multiple instances.
+
+    Args:
+        name: Name for the filesystem.
+        size_gb: Size in GB (default: 100).
+        location: Data center location (FIN-01, FIN-02, FIN-03).
+
+    Returns:
+        Creation result with filesystem details.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await create_shared_filesystem(name, size_gb, location)
+
+
+@mcp.tool()
+async def gpu_clusters() -> str:
+    """List all GPU clusters (Beta).
+
+    Clusters allow multi-node distributed training across multiple servers.
+
+    Returns:
+        List of clusters with GPU configurations.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await list_clusters()
+
+
+@mcp.tool()
+async def create_gpu_cluster(
+    name: str,
+    gpu_type: str = "H100",
+    gpus_per_node: int = 8,
+    num_nodes: int = 2,
+    location: str = "FIN-01",
+) -> str:
+    """Create a new GPU cluster for distributed training (Beta).
+
+    Sets up a multi-node cluster for large-scale training.
+
+    Args:
+        name: Cluster name.
+        gpu_type: GPU type (H100, A100, etc.).
+        gpus_per_node: GPUs per node (1, 2, 4, 8).
+        num_nodes: Number of nodes in cluster.
+        location: Data center location.
+
+    Returns:
+        Cluster creation result.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await create_cluster(name, gpu_type, gpus_per_node, num_nodes, location)
+
+
+@mcp.tool()
+async def batch_jobs() -> str:
+    """List all batch jobs (Beta).
+
+    Batch jobs run training automatically without manual instance management.
+
+    Returns:
+        List of batch jobs with status.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await list_batch_jobs()
+
+
+@mcp.tool()
+async def create_training_job(
+    name: str,
+    command: str,
+    gpu_type: str = "A6000",
+    gpu_count: int = 1,
+    timeout_hours: int = 24,
+) -> str:
+    """Create a batch training job (Beta).
+
+    Submits a training job that runs automatically.
+
+    Args:
+        name: Job name.
+        command: Training command to run (e.g., "python train.py").
+        gpu_type: GPU type (A6000, H100, etc.).
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+        timeout_hours: Maximum runtime in hours.
+
+    Returns:
+        Job creation result.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await create_batch_job(name, command, gpu_type, gpu_count, timeout_hours)
+
+
+@mcp.tool()
+async def batch_job_logs(job_id: str) -> str:
+    """Get logs from a batch job (Beta).
+
+    Retrieve output logs from a running or completed batch job.
+
+    Args:
+        job_id: The batch job ID.
+
+    Returns:
+        Job logs.
+    """
+    if not ADVANCED_TOOLS_AVAILABLE:
+        return "❌ Advanced tools not available."
+    return await get_batch_job_logs(job_id)
+
+
+# =============================================================================
 # Testing & Diagnostics Tools (NEW!)
 # =============================================================================
 
@@ -1696,6 +1852,11 @@ def main():
     else:
         features.append("❌ Training tools not available")
     
+    if ADVANCED_TOOLS_AVAILABLE:
+        features.append("✅ Advanced Tools (7 tools): Shared FS, Clusters, Batch Jobs (Beta)")
+    else:
+        features.append("❌ Advanced tools not available")
+    
     if TESTING_TOOLS_AVAILABLE:
         features.append("✅ Testing Tools (3 tools): Self-diagnostics")
     else:
@@ -1711,9 +1872,10 @@ def main():
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
-    training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0  # balance, checkpoint script, startup script, frameworks, alert, notify, gdrive backup
+    training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
+    advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0  # shared fs x2, clusters x2, batch x3
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + testing_tools
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + advanced_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
