@@ -1232,6 +1232,80 @@ async def watchdog_check_now(instance_ip: str) -> str:
 
 
 # =============================================================================
+# Testing & Diagnostics Tools (NEW!)
+# =============================================================================
+
+try:
+    from .testing_tools import (
+        run_api_tests,
+        run_ssh_tests,
+        run_all_tests,
+    )
+    TESTING_TOOLS_AVAILABLE = True
+except ImportError:
+    TESTING_TOOLS_AVAILABLE = False
+
+
+@mcp.tool()
+async def self_test_api() -> str:
+    """Run self-diagnostic tests on API and module functionality.
+
+    Tests config, GPU mappings, API calls, cost estimator, log parser,
+    and module availability. No instance required.
+
+    Returns:
+        Detailed test results with pass/fail status for each test.
+    """
+    if not TESTING_TOOLS_AVAILABLE:
+        return "❌ Testing tools not available."
+    return await run_api_tests()
+
+
+@mcp.tool()
+async def self_test_ssh(instance_ip: str) -> str:
+    """Run self-diagnostic tests on SSH/remote functionality.
+
+    Tests SSH connection, GPU status, command execution, file operations,
+    directory listing, and health checks on a running instance.
+
+    Args:
+        instance_ip: IP address of a running instance to test against.
+
+    Returns:
+        Detailed test results with pass/fail status for each test.
+    """
+    if not TESTING_TOOLS_AVAILABLE or not SSH_TOOLS_AVAILABLE:
+        return "❌ Testing or SSH tools not available."
+    return await run_ssh_tests(instance_ip)
+
+
+@mcp.tool()
+async def self_test_all(instance_ip: str = "") -> str:
+    """Run ALL self-diagnostic tests (API + SSH if instance provided).
+
+    Comprehensive test of all MCP functionality including:
+    - Configuration loading
+    - GPU type mappings
+    - API calls (instances, volumes, keys, images)
+    - Availability checking
+    - Cost estimation
+    - Log parsing
+    - Module availability (GDrive, WatchDog, SSH)
+    - SSH operations (if instance_ip provided)
+
+    Args:
+        instance_ip: Optional IP of running instance for SSH tests.
+
+    Returns:
+        Complete test report with timing and detailed results.
+    """
+    if not TESTING_TOOLS_AVAILABLE:
+        return "❌ Testing tools not available."
+    ip = instance_ip if instance_ip else None
+    return await run_all_tests(ip)
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
@@ -1265,6 +1339,11 @@ def main():
     else:
         features.append("❌ Extended tools not available")
     
+    if TESTING_TOOLS_AVAILABLE:
+        features.append("✅ Testing Tools (3 tools): Self-diagnostics")
+    else:
+        features.append("❌ Testing tools not available")
+    
     for f in features:
         logger.info(f)
     
@@ -1274,7 +1353,8 @@ def main():
     gdrive_tools = 6 if GDRIVE_TOOLS_AVAILABLE else 0
     watchdog_tools = 5 if WATCHDOG_AVAILABLE else 0
     extended_tools = 5 if EXTENDED_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools
+    testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
+    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + testing_tools
     
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)

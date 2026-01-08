@@ -59,6 +59,25 @@ def get_instance_type_from_gpu_type_and_count(
         "H200": {
             1: "1H200.141S.44V",
         },
+        # Budget-friendly options for testing
+        "A6000": {
+            1: "1A6000.10V",
+            2: "2A6000.20V",
+            4: "4A6000.40V",
+            8: "8A6000.80V",
+        },
+        "RTX_A6000": {
+            1: "1A6000.10V",
+            2: "2A6000.20V",
+            4: "4A6000.40V",
+            8: "8A6000.80V",
+        },
+        "L40S": {
+            1: "1L40S.12V",
+            2: "2L40S.24V",
+            4: "4L40S.48V",
+            8: "8L40S.96V",
+        },
     }
     return mapping.get(gpu_type.upper(), {}).get(gpu_count, "")
 

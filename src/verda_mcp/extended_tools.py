@@ -22,6 +22,11 @@ GPU_PRICING = {
     "H100": {"on_demand": 2.49, "spot": 0.62},
     "L40S": {"on_demand": 1.19, "spot": 0.30},
     "A100_80G": {"on_demand": 1.89, "spot": 0.47},
+    # Budget options
+    "A6000": {"on_demand": 0.49, "spot": 0.49},  # Fixed pricing only
+    "RTX_A6000": {"on_demand": 0.49, "spot": 0.49},
+    "RTX6000ADA": {"on_demand": 0.93, "spot": 0.93},
+    "V100": {"on_demand": 0.44, "spot": 0.44},
 }
 
 
