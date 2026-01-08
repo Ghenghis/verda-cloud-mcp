@@ -434,13 +434,43 @@ def create_app() -> "FastAPI":
 
     @app.post("/api/gpu/refresh")
     async def refresh_gpu_metrics():
-        """Refresh GPU metrics (trigger SSH nvidia-smi)."""
-        # In production, this would SSH to instance and run nvidia-smi
-        import random
+        """Refresh GPU metrics from real instance via SSH nvidia-smi."""
+        try:
+            # Try to get real data from connected instance
+            from .ssh_tools import get_ssh_manager
 
-        for gpu in state.gpu_metrics:
-            gpu.utilization = random.randint(90, 98)
-            gpu.temperature = random.randint(68, 76)
+            instance_ip = state.connection_status.instance_id
+            if instance_ip and instance_ip != "demo-instance":
+                manager_ssh = get_ssh_manager()
+                output = manager_ssh.run_command(
+                    instance_ip,
+                    "nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits",
+                )
+                if output:
+                    lines = output.strip().split("\n")
+                    state.gpu_metrics = []
+                    for line in lines:
+                        parts = [p.strip() for p in line.split(",")]
+                        if len(parts) >= 5:
+                            state.gpu_metrics.append(
+                                GPUMetrics(
+                                    gpu_id=int(parts[0]),
+                                    utilization=int(parts[1]),
+                                    memory_used=int(parts[2]) // 1024,
+                                    memory_total=int(parts[3]) // 1024,
+                                    temperature=int(parts[4]),
+                                )
+                            )
+                    state.add_log("info", f"GPU metrics refreshed from {instance_ip}")
+        except Exception as e:
+            # Fall back to simulated refresh if SSH fails
+            import random
+
+            for gpu in state.gpu_metrics:
+                gpu.utilization = random.randint(90, 98)
+                gpu.temperature = random.randint(68, 76)
+            state.add_log("warning", f"Using simulated GPU data: {e}")
+
         await manager.broadcast({"type": "gpu_update", "data": [g.model_dump() for g in state.gpu_metrics]})
         return {"success": True, "gpus": len(state.gpu_metrics)}
 
@@ -483,6 +513,116 @@ def create_app() -> "FastAPI":
         """Clear all logs."""
         state.logs = []
         return {"success": True}
+
+    # ==========================================================================
+    # Instance Connection Endpoints
+    # ==========================================================================
+
+    @app.post("/api/connect")
+    async def connect_to_instance(instance_ip: str, instance_type: str = ""):
+        """Connect dashboard to a real Verda instance."""
+        state.connection_status.instance_id = instance_ip
+        state.connection_status.instance_type = instance_type or "Connected"
+        state.connection_status.connected = True
+        state.add_log("success", f"Connected to instance: {instance_ip}")
+        await manager.broadcast({"type": "connection_update", "data": state.connection_status.model_dump()})
+        return {"success": True, "instance_ip": instance_ip}
+
+    @app.post("/api/disconnect")
+    async def disconnect_instance():
+        """Disconnect from current instance."""
+        old_ip = state.connection_status.instance_id
+        state.connection_status.instance_id = "demo-instance"
+        state.connection_status.instance_type = "Demo Mode"
+        state.connection_status.connected = False
+        state.add_log("info", f"Disconnected from {old_ip}")
+        return {"success": True}
+
+    # ==========================================================================
+    # SSH Command Endpoints (for SSH panel)
+    # ==========================================================================
+
+    @app.post("/api/ssh/connect")
+    async def ssh_connect(host: str, user: str = "root"):
+        """Establish SSH connection to instance."""
+        try:
+            from .ssh_tools import get_ssh_manager
+
+            manager_ssh = get_ssh_manager()
+            # Test connection
+            output = manager_ssh.run_command(host, "echo connected")
+            if output and "connected" in output:
+                state.connection_status.instance_id = host
+                state.connection_status.connected = True
+                state.add_log("success", f"SSH connected to {user}@{host}")
+                return {"success": True, "message": "Connected"}
+            return {"success": False, "error": "Connection test failed"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @app.post("/api/ssh/exec")
+    async def ssh_exec(host: str, command: str):
+        """Execute command on remote instance via SSH."""
+        try:
+            from .ssh_tools import get_ssh_manager
+
+            manager_ssh = get_ssh_manager()
+            output = manager_ssh.run_command(host, command)
+            state.add_log("info", f"SSH: {command[:50]}...")
+            return {"success": True, "output": output or ""}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # ==========================================================================
+    # MCP Command Endpoints (for Terminal panel)
+    # ==========================================================================
+
+    @app.post("/api/mcp/{command}")
+    async def run_mcp_command(command: str):
+        """Execute an MCP tool command."""
+        try:
+            # Import and run the appropriate MCP tool
+            result = None
+            if command == "list_instances":
+                from .server import list_instances
+
+                result = list_instances()
+            elif command == "available_now":
+                from .live_data import available_now
+
+                result = available_now()
+            elif command == "check_balance":
+                from .training_tools import check_account_balance
+
+                result = check_account_balance()
+            elif command == "best_deals_now":
+                from .spot_manager import best_deals_now
+
+                result = best_deals_now()
+            elif command == "list_volumes":
+                from .server import list_volumes
+
+                result = list_volumes()
+            elif command == "watchdog_status":
+                from .watchdog import watchdog_status
+
+                result = watchdog_status()
+            elif command == "training_session_status":
+                from .spot_manager import training_session_status
+
+                result = training_session_status()
+            elif command == "gpu_catalog":
+                from .gpu_optimizer import gpu_catalog
+
+                result = gpu_catalog()
+            else:
+                result = f"Unknown MCP command: {command}"
+
+            state.add_log("info", f"MCP: {command}")
+            return {"success": True, "result": result}
+        except Exception as e:
+            state.add_log("error", f"MCP {command} failed: {e}")
+            return {"success": False, "error": str(e)}
 
     # ==========================================================================
     # WebSocket Endpoint
