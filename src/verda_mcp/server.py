@@ -57,8 +57,7 @@ async def list_instances() -> str:
     for inst in instances:
         ip_info = f", IP: {inst.ip_address}" if inst.ip_address else ""
         lines.append(
-            f"- **{inst.hostname}** (`{inst.id}`)\n"
-            f"  Status: {inst.status}, Type: {inst.instance_type}{ip_info}"
+            f"- **{inst.hostname}** (`{inst.id}`)\n  Status: {inst.status}, Type: {inst.instance_type}{ip_info}"
         )
 
     return "\n".join(lines)
@@ -139,16 +138,11 @@ async def check_spot_availability(
         lines.append("")
         lines.append(f"**Location**: {result.location}")
         lines.append("")
-        lines.append(
-            "Ready to deploy! Use `deploy_spot_instance` to create an instance."
-        )
+        lines.append("Ready to deploy! Use `deploy_spot_instance` to create an instance.")
     else:
         lines.append("## ✗ NOT AVAILABLE")
         lines.append("")
-        lines.append(
-            "No spot instances available across all locations "
-            "(FIN-01, FIN-02, FIN-03)."
-        )
+        lines.append("No spot instances available across all locations (FIN-01, FIN-02, FIN-03).")
         lines.append("")
         lines.append("Options:")
         lines.append("- Use `monitor_spot_availability` to wait for availability")
@@ -196,8 +190,7 @@ async def monitor_spot_availability(
         f"# Monitoring {gpu_type} x{gpu_count} Spot Availability",
         "",
         f"Instance type: {instance_type}",
-        f"Checking every {check_interval}s, max {max_checks} checks "
-        f"({max_checks * check_interval // 60} min)",
+        f"Checking every {check_interval}s, max {max_checks} checks ({max_checks * check_interval // 60} min)",
         "",
     ]
 
@@ -248,10 +241,7 @@ async def monitor_spot_availability(
                     results.append("")
                     results.append(f"**Error**: {e}")
             else:
-                results.append(
-                    "Use `deploy_spot_instance` to deploy, "
-                    "or re-run with `auto_deploy=True`"
-                )
+                results.append("Use `deploy_spot_instance` to deploy, or re-run with `auto_deploy=True`")
 
             return "\n".join(results)
 
@@ -428,10 +418,7 @@ async def start_instance(instance_id: str) -> str:
     """
     client = _get_client()
     await client.instance_action(instance_id, "boot")
-    return (
-        f"Instance `{instance_id}` start initiated. "
-        "Use `check_instance_status` to monitor."
-    )
+    return f"Instance `{instance_id}` start initiated. Use `check_instance_status` to monitor."
 
 
 # =============================================================================
@@ -458,10 +445,7 @@ async def list_volumes() -> str:
             attached = f"Attached to: {vol.attached_to}"
         else:
             attached = "Not attached"
-        lines.append(
-            f"- **{vol.name}** (`{vol.id}`)\n"
-            f"  Size: {vol.size_gb} GB, Status: {vol.status}, {attached}"
-        )
+        lines.append(f"- **{vol.name}** (`{vol.id}`)\n  Size: {vol.size_gb} GB, Status: {vol.status}, {attached}")
 
     return "\n".join(lines)
 
@@ -618,6 +602,7 @@ async def create_volume(
 # Script Management Tools
 # =============================================================================
 
+
 @mcp.tool()
 async def get_instance_startup_script(instance_id: str) -> str:
     """Get the startup script attached to a specific Verda Cloud instance.
@@ -764,16 +749,17 @@ async def show_config() -> str:
 
 try:
     from .ssh_tools import (
-        ssh_run_command,
+        PARAMIKO_AVAILABLE,
         ssh_get_gpu_status,
         ssh_get_training_logs,
         ssh_get_training_progress,
-        ssh_read_file,
-        ssh_write_file,
-        ssh_list_dir,
         ssh_kill_training,
-        PARAMIKO_AVAILABLE,
+        ssh_list_dir,
+        ssh_read_file,
+        ssh_run_command,
+        ssh_write_file,
     )
+
     SSH_TOOLS_AVAILABLE = PARAMIKO_AVAILABLE
 except ImportError:
     SSH_TOOLS_AVAILABLE = False
@@ -914,14 +900,15 @@ async def remote_kill_training(instance_ip: str) -> str:
 
 try:
     from .extended_tools import (
-        estimate_training_cost,
-        parse_training_logs,
-        health_check,
-        list_instance_checkpoints,
         backup_latest_checkpoint,
+        estimate_training_cost,
+        health_check,
         list_all_gpus,
+        list_instance_checkpoints,
+        parse_training_logs,
         recommend_gpu_for_model,
     )
+
     EXTENDED_TOOLS_AVAILABLE = True
 except ImportError:
     EXTENDED_TOOLS_AVAILABLE = False
@@ -1061,14 +1048,15 @@ async def recommend_gpu(
 
 try:
     from .gdrive_tools import (
-        gdrive_download_to_local,
-        gdrive_download_folder_to_local,
-        transfer_local_to_verda,
-        transfer_verda_to_local,
+        GDOWN_AVAILABLE,
         auto_setup_training,
         auto_start_training,
-        GDOWN_AVAILABLE,
+        gdrive_download_folder_to_local,
+        gdrive_download_to_local,
+        transfer_local_to_verda,
+        transfer_verda_to_local,
     )
+
     GDRIVE_TOOLS_AVAILABLE = GDOWN_AVAILABLE
 except ImportError:
     GDRIVE_TOOLS_AVAILABLE = False
@@ -1187,12 +1175,13 @@ async def automated_start_training(instance_ip: str, script_path: str) -> str:
 
 try:
     from .watchdog import (
+        get_latest_watchdog_report,
+        get_watchdog_status,
+        manual_watchdog_check,
         start_watchdog,
         stop_watchdog,
-        get_watchdog_status,
-        get_latest_watchdog_report,
-        manual_watchdog_check,
     )
+
     WATCHDOG_AVAILABLE = True
 except ImportError:
     WATCHDOG_AVAILABLE = False
@@ -1279,12 +1268,12 @@ async def watchdog_check_now(instance_ip: str) -> str:
 try:
     from .spot_manager import (
         compare_spot_vs_ondemand,
-        smart_deploy_instance,
-        switch_instance_mode,
         get_session_status,
+        smart_deploy_instance,
         stop_session_monitoring,
-        GPU_PRICING_FULL,
+        switch_instance_mode,
     )
+
     SPOT_MANAGER_AVAILABLE = True
 except ImportError:
     SPOT_MANAGER_AVAILABLE = False
@@ -1347,8 +1336,13 @@ async def smart_deploy(
     if not SPOT_MANAGER_AVAILABLE:
         return "❌ Spot manager not available."
     return await smart_deploy_instance(
-        gpu_type, gpu_count, prefer_spot, auto_failover,
-        checkpoint_minutes, volume_id, script_id
+        gpu_type,
+        gpu_count,
+        prefer_spot,
+        auto_failover,
+        checkpoint_minutes,
+        volume_id,
+        script_id,
     )
 
 
@@ -1421,11 +1415,12 @@ try:
         check_account_balance,
         generate_checkpoint_script,
         generate_startup_script,
-        set_cost_alert,
-        send_training_notification,
-        upload_checkpoint_to_gdrive,
         list_available_frameworks,
+        send_training_notification,
+        set_cost_alert,
+        upload_checkpoint_to_gdrive,
     )
+
     TRAINING_TOOLS_AVAILABLE = True
 except ImportError:
     TRAINING_TOOLS_AVAILABLE = False
@@ -1475,7 +1470,7 @@ async def create_checkpoint_script(
 
 
 @mcp.tool()
-async def create_startup_script(framework: str = "huggingface") -> str:
+async def generate_framework_script(framework: str = "huggingface") -> str:
     """Generate a Verda startup script for your framework.
 
     Creates a bash script that:
@@ -1584,11 +1579,12 @@ async def backup_checkpoint_to_gdrive(
 
 try:
     from .smart_deployer import (
+        deploy_with_all_failsafes,
         find_best_deals_now,
         find_power_deals_now,
-        deploy_with_all_failsafes,
         show_available_now,
     )
+
     SMART_DEPLOYER_AVAILABLE = True
 except ImportError:
     SMART_DEPLOYER_AVAILABLE = False
@@ -1688,12 +1684,13 @@ async def available_now() -> str:
 
 try:
     from .training_intelligence import (
-        training_intel,
-        training_viz,
-        training_profile,
-        training_monitor,
         model_advisor,
+        training_intel,
+        training_monitor,
+        training_profile,
+        training_viz,
     )
+
     TRAINING_INTEL_AVAILABLE = True
 except ImportError:
     TRAINING_INTEL_AVAILABLE = False
@@ -1706,10 +1703,10 @@ async def train_intel(
     skill_level: str = "normal",
 ) -> str:
     """MEGA-TOOL: Training Intelligence Hub (15+ sub-commands).
-    
+
     Analyzes training in real-time and converts metrics to simple English.
     Uses 10-stage rating system (1-10) to show progress.
-    
+
     Actions:
     - status: Full training status with analysis
     - stage: Current stage (1-10) with explanation
@@ -1722,12 +1719,12 @@ async def train_intel(
     - recommendations: Actionable suggestions
     - predict: Estimated completion time
     - explain: What metrics mean
-    
+
     Args:
         action: Sub-command to run.
         instance_ip: Instance to analyze (optional).
         skill_level: beginner/casual/normal/advanced/expert/elite/hacker
-    
+
     Returns:
         Training analysis adapted to skill level.
     """
@@ -1743,9 +1740,9 @@ async def train_viz(
     instance_ip: str = "",
 ) -> str:
     """MEGA-TOOL: Training Visualization Hub (7 output formats).
-    
+
     Generates training visualizations in multiple formats.
-    
+
     Formats:
     - ascii: ASCII art charts (terminal-friendly)
     - markdown: GitHub-flavored markdown
@@ -1754,18 +1751,18 @@ async def train_viz(
     - json: Raw JSON data
     - terminal: ANSI colored output
     - minimal: Just the numbers
-    
+
     Chart Types:
     - progress: Progress bar/gauge
     - loss: Loss curve
     - dashboard: Full dashboard
     - gauge: Speedometer style
-    
+
     Args:
         format: Output format type.
         chart_type: Type of visualization.
         instance_ip: Instance to visualize.
-    
+
     Returns:
         Visualization in requested format.
     """
@@ -1780,9 +1777,9 @@ async def train_profile(
     level: str = "normal",
 ) -> str:
     """MEGA-TOOL: User Profile Manager (7 skill levels).
-    
+
     Adapts all output to your experience level.
-    
+
     Levels:
     - beginner: Simple, friendly explanations
     - casual: Easy with some technical terms
@@ -1791,18 +1788,18 @@ async def train_profile(
     - expert: Raw data + analysis
     - elite: Everything + academic context
     - hacker: Minimal CLI-style
-    
+
     Actions:
     - set: Set your level
     - get: Get current level
     - list: List all levels
     - describe: Explain each level
     - sample: Preview output style
-    
+
     Args:
         action: What to do.
         level: Skill level to set.
-    
+
     Returns:
         Profile update confirmation.
     """
@@ -1818,9 +1815,9 @@ async def train_monitor(
     interval: int = 60,
 ) -> str:
     """MEGA-TOOL: Real-time Training Monitor (12 functions).
-    
+
     Continuous monitoring with alerts and logging.
-    
+
     Actions:
     - start: Begin monitoring
     - stop: Stop monitoring
@@ -1830,12 +1827,12 @@ async def train_monitor(
     - get_logs: Recent logs
     - get_alerts: Triggered alerts
     - export: Export data
-    
+
     Args:
         action: Monitor command.
         instance_ip: Instance to monitor.
         interval: Check interval in seconds.
-    
+
     Returns:
         Monitor status/results.
     """
@@ -1851,9 +1848,9 @@ async def train_advisor(
     budget: float = 5.0,
 ) -> str:
     """MEGA-TOOL: Model & Training Advisor (10 functions).
-    
+
     Get recommendations for GPU, settings, and optimization.
-    
+
     Actions:
     - recommend: GPU for model size
     - compare: Compare GPU options
@@ -1865,12 +1862,12 @@ async def train_advisor(
     - checkpointing: Checkpoint strategy
     - multi_gpu: Multi-GPU advice
     - frameworks: Framework recommendations
-    
+
     Args:
         action: Advice type.
         model_size: Model size (7B, 13B, 70B, etc).
         budget: Hourly budget in USD.
-    
+
     Returns:
         Expert recommendations.
     """
@@ -1878,16 +1875,18 @@ async def train_advisor(
         return "Training Intelligence not available."
     return await model_advisor(action=action, model_size=model_size, budget=budget)
 
+
 # GPU Optimizer (Multi-GPU Spot Comparisons, Training Time Estimates)
 # =============================================================================
 
 try:
     from .gpu_optimizer import (
         compare_multi_gpu_spot,
-        find_best_gpu_config,
         estimate_training_time,
+        find_best_gpu_config,
         list_all_gpus_detailed,
     )
+
     GPU_OPTIMIZER_AVAILABLE = True
 except ImportError:
     GPU_OPTIMIZER_AVAILABLE = False
@@ -1982,12 +1981,13 @@ async def gpu_catalog() -> str:
 
 try:
     from .live_data import (
-        check_live_availability,
         check_all_availability,
-        get_current_costs,
+        check_live_availability,
         get_api_info,
+        get_current_costs,
         refresh_data,
     )
+
     LIVE_DATA_AVAILABLE = True
 except ImportError:
     LIVE_DATA_AVAILABLE = False
@@ -2078,14 +2078,15 @@ async def refresh_live_data() -> str:
 
 try:
     from .advanced_tools import (
-        list_shared_filesystems,
-        create_shared_filesystem,
-        list_clusters,
-        create_cluster,
-        list_batch_jobs,
         create_batch_job,
+        create_cluster,
+        create_shared_filesystem,
         get_batch_job_logs,
+        list_batch_jobs,
+        list_clusters,
+        list_shared_filesystems,
     )
+
     ADVANCED_TOOLS_AVAILABLE = True
 except ImportError:
     ADVANCED_TOOLS_AVAILABLE = False
@@ -2234,10 +2235,11 @@ async def batch_job_logs(job_id: str) -> str:
 
 try:
     from .testing_tools import (
+        run_all_tests,
         run_api_tests,
         run_ssh_tests,
-        run_all_tests,
     )
+
     TESTING_TOOLS_AVAILABLE = True
 except ImportError:
     TESTING_TOOLS_AVAILABLE = False
@@ -2313,67 +2315,67 @@ def main():
     logger.info("🚀 Verda Cloud MCP Server (Enhanced Edition)")
     logger.info("   Full GPU Training Automation Suite")
     logger.info("=" * 60)
-    
+
     # Feature status
     features = []
     if SSH_TOOLS_AVAILABLE:
         features.append("✅ SSH Remote Access (8 tools)")
     else:
         features.append("❌ SSH tools - install paramiko")
-    
+
     if GDRIVE_TOOLS_AVAILABLE:
         features.append("✅ Google Drive Integration (6 tools)")
     else:
         features.append("❌ Google Drive - install gdown")
-    
+
     if WATCHDOG_AVAILABLE:
         features.append("✅ WatchDog Monitoring (5 tools)")
     else:
         features.append("❌ WatchDog not available")
-    
+
     if EXTENDED_TOOLS_AVAILABLE:
         features.append("✅ Extended Tools (7 tools): Cost, Health, Logs, Checkpoints, GPU List, Recommendations")
     else:
         features.append("❌ Extended tools not available")
-    
+
     if SPOT_MANAGER_AVAILABLE:
         features.append("✅ Spot Manager (6 tools): Auto-Switch, Failover, 75% Savings!")
     else:
         features.append("❌ Spot manager not available")
-    
+
     if TRAINING_TOOLS_AVAILABLE:
         features.append("✅ Training Tools (7 tools): Checkpoints, Scripts, Alerts, Notifications")
     else:
         features.append("❌ Training tools not available")
-    
+
     if SMART_DEPLOYER_AVAILABLE:
         features.append("✅ Smart Deployer (4 tools): Fail-Safes, Best Deals, Auto-Recovery")
     else:
         features.append("❌ Smart deployer not available")
-    
+
     if GPU_OPTIMIZER_AVAILABLE:
         features.append("✅ GPU Optimizer (4 tools): Multi-GPU Spot Comparisons, Training Estimates")
     else:
         features.append("❌ GPU optimizer not available")
-    
+
     if LIVE_DATA_AVAILABLE:
         features.append("✅ Live Data (5 tools): API Auto-Update, Availability, Costs")
     else:
         features.append("❌ Live data not available")
-    
+
     if ADVANCED_TOOLS_AVAILABLE:
         features.append("✅ Advanced Tools (7 tools): Shared FS, Clusters, Batch Jobs (Beta)")
     else:
         features.append("❌ Advanced tools not available")
-    
+
     if TESTING_TOOLS_AVAILABLE:
         features.append("✅ Testing Tools (3 tools): Self-diagnostics")
     else:
         features.append("❌ Testing tools not available")
-    
+
     for f in features:
         logger.info(f)
-    
+
     # Count total tools
     base_tools = 20  # Original tools
     ssh_tools = 8 if SSH_TOOLS_AVAILABLE else 0
@@ -2382,14 +2384,28 @@ def main():
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
     training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
-    smart_deployer_tools = 4 if SMART_DEPLOYER_AVAILABLE else 0  # best_deals, power_deals, deploy_failsafe, available_now
-    training_intel_tools = 5 if TRAINING_INTEL_AVAILABLE else 0  # 5 mega-tools with 55+ bundled functions
+    smart_deployer_tools = (
+        4 if SMART_DEPLOYER_AVAILABLE else 0
+    )  # best_deals, power_deals, deploy_failsafe, available_now
     gpu_optimizer_tools = 4 if GPU_OPTIMIZER_AVAILABLE else 0
     live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
     advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
-    total = base_tools + ssh_tools + gdrive_tools + watchdog_tools + extended_tools + spot_tools + training_tools + smart_deployer_tools + gpu_optimizer_tools + live_data_tools + advanced_tools + testing_tools
-    
+    total = (
+        base_tools
+        + ssh_tools
+        + gdrive_tools
+        + watchdog_tools
+        + extended_tools
+        + spot_tools
+        + training_tools
+        + smart_deployer_tools
+        + gpu_optimizer_tools
+        + live_data_tools
+        + advanced_tools
+        + testing_tools
+    )
+
     logger.info(f"📊 Total Tools Available: {total}")
     logger.info("=" * 60)
     mcp.run(transport="stdio")
@@ -2397,4 +2413,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

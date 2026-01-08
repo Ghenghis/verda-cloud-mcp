@@ -474,9 +474,7 @@ class VerdaSDKClient:
         kwargs: dict[str, Any] = {
             "instance_type": instance_type,
             "image": image,
-            "hostname": hostname or (
-                f"{self.config.defaults.hostname_prefix}-{gpu_count}"
-            ),
+            "hostname": hostname or (f"{self.config.defaults.hostname_prefix}-{gpu_count}"),
             "description": description,
             "ssh_key_ids": ssh_key_ids,
             "location": location,
@@ -650,9 +648,7 @@ class VerdaSDKClient:
         instance = await self.get_instance(instance_id)
         if not instance.startup_script_id:
             return None
-        script = await self._run_sync(
-            self._scripts.get_by_id, instance.startup_script_id
-        )
+        script = await self._run_sync(self._scripts.get_by_id, instance.startup_script_id)
         return Script.from_sdk(script)
 
     # =========================================================================

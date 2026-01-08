@@ -12,11 +12,9 @@ Comprehensive training support including:
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
-from dataclasses import dataclass, field
-from pathlib import Path
-import json
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +47,16 @@ MODEL_NAME = "{model_name}"
 
 class CheckpointManager:
     """Manages checkpoints for spot instance training."""
-    
+
     def __init__(self, checkpoint_dir: str = CHECKPOINT_DIR):
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.last_checkpoint_time = time.time()
-    
+
     def should_checkpoint(self) -> bool:
         """Check if it's time to save a checkpoint."""
         return (time.time() - self.last_checkpoint_time) >= CHECKPOINT_INTERVAL_SECONDS
-    
+
     def save_checkpoint(self, model, optimizer, epoch: int, step: int, loss: float, **extra):
         """Save training checkpoint."""
         checkpoint = {{
@@ -70,35 +68,35 @@ class CheckpointManager:
             "timestamp": datetime.now().isoformat(),
             **extra
         }}
-        
+
         # Save with timestamp
         checkpoint_path = self.checkpoint_dir / f"checkpoint-step-{{step}}.pt"
         torch.save(checkpoint, checkpoint_path)
-        
+
         # Also save as "latest" for easy resume
         latest_path = self.checkpoint_dir / "checkpoint-latest.pt"
         torch.save(checkpoint, latest_path)
-        
+
         self.last_checkpoint_time = time.time()
         print(f"✅ Checkpoint saved: {{checkpoint_path}} (step {{step}}, loss {{loss:.4f}})")
-        
+
         return checkpoint_path
-    
+
     def load_latest_checkpoint(self, model, optimizer):
         """Load the latest checkpoint if it exists."""
         latest_path = self.checkpoint_dir / "checkpoint-latest.pt"
-        
+
         if latest_path.exists():
             checkpoint = torch.load(latest_path)
             model.load_state_dict(checkpoint["model_state_dict"])
             optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-            
+
             print(f"🔄 Resumed from checkpoint: step {{checkpoint['step']}}, epoch {{checkpoint['epoch']}}")
             return checkpoint
-        
+
         print("📝 No checkpoint found, starting fresh")
         return None
-    
+
     def cleanup_old_checkpoints(self, keep_last: int = 5):
         """Keep only the N most recent checkpoints."""
         checkpoints = sorted(
@@ -106,7 +104,7 @@ class CheckpointManager:
             key=lambda p: p.stat().st_mtime,
             reverse=True
         )
-        
+
         for old_checkpoint in checkpoints[keep_last:]:
             old_checkpoint.unlink()
             print(f"🗑️ Removed old checkpoint: {{old_checkpoint.name}}")
@@ -116,17 +114,17 @@ class CheckpointManager:
 #
 # checkpoint_mgr = CheckpointManager()
 # start_epoch, start_step = 0, 0
-# 
+#
 # # Try to resume
 # checkpoint = checkpoint_mgr.load_latest_checkpoint(model, optimizer)
 # if checkpoint:
 #     start_epoch = checkpoint["epoch"]
 #     start_step = checkpoint["step"]
-# 
+#
 # for epoch in range(start_epoch, num_epochs):
 #     for step, batch in enumerate(dataloader, start=start_step):
 #         # ... training step ...
-#         
+#
 #         # Check if time to checkpoint
 #         if checkpoint_mgr.should_checkpoint():
 #             checkpoint_mgr.save_checkpoint(model, optimizer, epoch, step, loss.item())
@@ -164,11 +162,11 @@ CHECKPOINT_INTERVAL_SECONDS = {checkpoint_seconds}
 
 class SpotCheckpointCallback(TrainerCallback):
     """Callback to save checkpoints every N minutes for spot instance safety."""
-    
+
     def __init__(self, checkpoint_interval_seconds: int = CHECKPOINT_INTERVAL_SECONDS):
         self.checkpoint_interval = checkpoint_interval_seconds
         self.last_checkpoint_time = time.time()
-    
+
     def on_step_end(self, args, state, control, **kwargs):
         if (time.time() - self.last_checkpoint_time) >= self.checkpoint_interval:
             control.should_save = True
@@ -181,32 +179,32 @@ def get_training_args(output_dir: str = CHECKPOINT_DIR) -> TrainingArguments:
     """Get training arguments optimized for spot instances."""
     return TrainingArguments(
         output_dir=output_dir,
-        
+
         # Checkpoint settings - CRITICAL for spot!
         save_strategy="steps",
         save_steps=500,  # Also save every 500 steps as backup
         save_total_limit=5,  # Keep last 5 checkpoints
-        
+
         # Resume from checkpoint
         resume_from_checkpoint=True,
-        
+
         # Training settings
         num_train_epochs=3,
         per_device_train_batch_size=4,
         gradient_accumulation_steps=4,
-        
+
         # Optimization
         learning_rate=2e-5,
         warmup_steps=100,
         weight_decay=0.01,
-        
+
         # Logging
         logging_steps=10,
         logging_dir=f"{{output_dir}}/logs",
-        
+
         # Mixed precision for GPU efficiency
         bf16=True,  # Use bf16 for Blackwell/Hopper GPUs
-        
+
         # DataLoader
         dataloader_num_workers=4,
     )
@@ -220,11 +218,11 @@ def find_latest_checkpoint(output_dir: str) -> str:
         key=lambda p: int(p.name.split("-")[-1]) if p.name.split("-")[-1].isdigit() else 0,
         reverse=True
     )
-    
+
     if checkpoints:
         print(f"🔄 Found checkpoint: {{checkpoints[0]}}")
         return str(checkpoints[0])
-    
+
     print("📝 No checkpoint found, starting fresh")
     return None
 
@@ -233,16 +231,16 @@ def find_latest_checkpoint(output_dir: str) -> str:
 #
 # model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 # tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-# 
+#
 # training_args = get_training_args()
-# 
+#
 # trainer = Trainer(
 #     model=model,
 #     args=training_args,
 #     train_dataset=train_dataset,
 #     callbacks=[SpotCheckpointCallback()],
 # )
-# 
+#
 # # Auto-resume from checkpoint
 # checkpoint = find_latest_checkpoint(CHECKPOINT_DIR)
 # trainer.train(resume_from_checkpoint=checkpoint)
@@ -274,14 +272,14 @@ CHECKPOINT_INTERVAL_SECONDS = {checkpoint_seconds}
 
 class TimeBasedCheckpoint(Callback):
     """Save checkpoint every N minutes regardless of steps."""
-    
+
     def __init__(self, checkpoint_dir: str, interval_seconds: int = CHECKPOINT_INTERVAL_SECONDS):
         super().__init__()
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.interval_seconds = interval_seconds
         self.last_checkpoint_time = time.time()
-    
+
     def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
         if (time.time() - self.last_checkpoint_time) >= self.interval_seconds:
             checkpoint_path = self.checkpoint_dir / f"time-checkpoint-step-{{trainer.global_step}}.ckpt"
@@ -295,7 +293,7 @@ def get_callbacks(checkpoint_dir: str = CHECKPOINT_DIR) -> list:
     return [
         # Time-based checkpoint (every 10 minutes)
         TimeBasedCheckpoint(checkpoint_dir),
-        
+
         # Step-based checkpoint (every 500 steps)
         ModelCheckpoint(
             dirpath=checkpoint_dir,
@@ -304,7 +302,7 @@ def get_callbacks(checkpoint_dir: str = CHECKPOINT_DIR) -> list:
             every_n_train_steps=500,
             save_last=True,
         ),
-        
+
         # Best model checkpoint
         ModelCheckpoint(
             dirpath=checkpoint_dir,
@@ -319,24 +317,24 @@ def get_callbacks(checkpoint_dir: str = CHECKPOINT_DIR) -> list:
 def find_latest_checkpoint(checkpoint_dir: str) -> str:
     """Find the latest checkpoint."""
     checkpoint_path = Path(checkpoint_dir)
-    
+
     # Check for "last.ckpt" first
     last_ckpt = checkpoint_path / "last.ckpt"
     if last_ckpt.exists():
         print(f"🔄 Found last checkpoint: {{last_ckpt}}")
         return str(last_ckpt)
-    
+
     # Find most recent checkpoint file
     checkpoints = sorted(
         checkpoint_path.glob("*.ckpt"),
         key=lambda p: p.stat().st_mtime,
         reverse=True
     )
-    
+
     if checkpoints:
         print(f"🔄 Found checkpoint: {{checkpoints[0]}}")
         return str(checkpoints[0])
-    
+
     print("📝 No checkpoint found, starting fresh")
     return None
 
@@ -351,7 +349,7 @@ def find_latest_checkpoint(checkpoint_dir: str) -> str:
 #     callbacks=get_callbacks(),
 #     logger=TensorBoardLogger(CHECKPOINT_DIR, name="logs"),
 # )
-# 
+#
 # # Auto-resume
 # checkpoint = find_latest_checkpoint(CHECKPOINT_DIR)
 # trainer.fit(model, datamodule, ckpt_path=checkpoint)
@@ -362,7 +360,7 @@ def find_latest_checkpoint(checkpoint_dir: str) -> str:
 # STARTUP SCRIPTS
 # =============================================================================
 
-STARTUP_SCRIPT_BASE = '''#!/bin/bash
+STARTUP_SCRIPT_BASE = """#!/bin/bash
 # Verda Instance Startup Script
 # Auto-generated by Verda MCP Server
 # Framework: {framework}
@@ -393,43 +391,43 @@ nvidia-smi
 
 echo "✅ Setup complete!"
 echo "📁 Workspace: /workspace"
-'''
+"""
 
 FRAMEWORK_PACKAGES = {
-    "pytorch": '''
+    "pytorch": """
 pip install torch torchvision torchaudio
 pip install transformers datasets accelerate
 pip install wandb tensorboard
 pip install bitsandbytes
-''',
-    "huggingface": '''
+""",
+    "huggingface": """
 pip install torch torchvision torchaudio
 pip install transformers[torch] datasets accelerate
 pip install peft trl
 pip install bitsandbytes flash-attn
 pip install wandb tensorboard
 pip install sentencepiece tokenizers
-''',
-    "lightning": '''
+""",
+    "lightning": """
 pip install torch torchvision torchaudio
 pip install pytorch-lightning lightning
 pip install transformers datasets
 pip install wandb tensorboard
-''',
-    "llama": '''
+""",
+    "llama": """
 pip install torch torchvision torchaudio
 pip install transformers datasets accelerate
 pip install peft trl bitsandbytes
 pip install flash-attn --no-build-isolation
 pip install wandb tensorboard
 pip install sentencepiece unsloth
-''',
-    "stable_diffusion": '''
+""",
+    "stable_diffusion": """
 pip install torch torchvision torchaudio
 pip install diffusers transformers accelerate
 pip install safetensors xformers
 pip install wandb tensorboard
-''',
+""",
 }
 
 
@@ -437,9 +435,11 @@ pip install wandb tensorboard
 # CLASSES
 # =============================================================================
 
+
 @dataclass
 class CostAlert:
     """Cost alert configuration."""
+
     threshold_usd: float
     alert_type: str = "warning"  # warning, critical, stop
     webhook_url: Optional[str] = None
@@ -450,11 +450,11 @@ class CostAlert:
 
 class TrainingToolsManager:
     """Manages training tools and scripts."""
-    
+
     def __init__(self):
         self.cost_alerts: List[CostAlert] = []
         self.active_notifications: Dict[str, str] = {}  # instance_id -> webhook_url
-    
+
     def generate_checkpoint_script(
         self,
         framework: str = "pytorch",
@@ -464,7 +464,7 @@ class TrainingToolsManager:
     ) -> str:
         """Generate a checkpoint-enabled training script."""
         checkpoint_seconds = checkpoint_minutes * 60
-        
+
         templates = {
             "pytorch": PYTORCH_CHECKPOINT_TEMPLATE,
             "huggingface": HUGGINGFACE_CHECKPOINT_TEMPLATE,
@@ -472,26 +472,26 @@ class TrainingToolsManager:
             "lightning": LIGHTNING_CHECKPOINT_TEMPLATE,
             "pl": LIGHTNING_CHECKPOINT_TEMPLATE,
         }
-        
+
         template = templates.get(framework.lower(), PYTORCH_CHECKPOINT_TEMPLATE)
-        
+
         return template.format(
             checkpoint_dir=checkpoint_dir,
             checkpoint_minutes=checkpoint_minutes,
             checkpoint_seconds=checkpoint_seconds,
             model_name=model_name,
         )
-    
+
     def generate_startup_script(self, framework: str = "huggingface") -> str:
         """Generate a startup script for the specified framework."""
         framework_key = framework.lower()
         packages = FRAMEWORK_PACKAGES.get(framework_key, FRAMEWORK_PACKAGES["pytorch"])
-        
+
         return STARTUP_SCRIPT_BASE.format(
             framework=framework,
             framework_packages=packages,
         )
-    
+
     def add_cost_alert(
         self,
         threshold_usd: float,
@@ -506,7 +506,7 @@ class TrainingToolsManager:
         )
         self.cost_alerts.append(alert)
         return alert
-    
+
     def check_cost_alerts(self, current_cost: float) -> List[CostAlert]:
         """Check if any cost alerts should be triggered."""
         triggered = []
@@ -516,7 +516,7 @@ class TrainingToolsManager:
                 alert.triggered_at = datetime.now()
                 triggered.append(alert)
         return triggered
-    
+
     async def send_notification(
         self,
         webhook_url: str,
@@ -526,21 +526,21 @@ class TrainingToolsManager:
         """Send a notification via webhook."""
         try:
             import aiohttp
-            
+
             payload = {
                 "event": event_type,
                 "message": message,
                 "timestamp": datetime.now().isoformat(),
                 "source": "verda-mcp",
             }
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(webhook_url, json=payload) as resp:
                     return resp.status == 200
         except Exception as e:
             logger.error(f"Notification failed: {e}")
             return False
-    
+
     def format_checkpoint_script(self, script: str, framework: str) -> str:
         """Format checkpoint script for display."""
         return f"""# 📝 {framework.upper()} Checkpoint Script
@@ -564,7 +564,7 @@ Generated with 10-minute checkpoint intervals for spot instance safety.
 {script}
 ```
 """
-    
+
     def format_startup_script(self, script: str, framework: str) -> str:
         """Format startup script for display."""
         return f"""# 🚀 {framework.upper()} Startup Script
@@ -605,34 +605,36 @@ def get_training_manager() -> TrainingToolsManager:
 # ASYNC WRAPPER FUNCTIONS FOR MCP TOOLS
 # =============================================================================
 
+
 async def check_account_balance() -> str:
     """Check Verda account balance."""
     try:
         from .client import get_client
+
         client = get_client()
-        
+
         # Note: This depends on Verda API having a balance endpoint
         # If not available, we'll estimate based on usage
         try:
             balance = await client.get_balance()
             return f"""# 💳 Account Balance
 
-**Current Balance**: ${balance.get('balance', 'N/A')}
-**Currency**: {balance.get('currency', 'USD')}
+**Current Balance**: ${balance.get("balance", "N/A")}
+**Currency**: {balance.get("currency", "USD")}
 
 ## Usage This Month
-- **Compute**: ${balance.get('compute_usage', 0):.2f}
-- **Storage**: ${balance.get('storage_usage', 0):.2f}
-- **Total**: ${balance.get('total_usage', 0):.2f}
+- **Compute**: ${balance.get("compute_usage", 0):.2f}
+- **Storage**: ${balance.get("storage_usage", 0):.2f}
+- **Total**: ${balance.get("total_usage", 0):.2f}
 
 ## Status
-{'✅ Sufficient funds' if balance.get('balance', 0) > 10 else '⚠️ Low balance - please add funds'}
+{"✅ Sufficient funds" if balance.get("balance", 0) > 10 else "⚠️ Low balance - please add funds"}
 """
         except AttributeError:
             # Fallback if balance API not available
             instances = await client.list_instances()
             running = [i for i in instances if i.status == "running"]
-            
+
             return f"""# 💳 Account Status
 
 ⚠️ **Note**: Direct balance API not available. Contact Verda for balance info.
@@ -678,17 +680,17 @@ async def set_cost_alert(
 ) -> str:
     """Set a cost alert for training sessions."""
     manager = get_training_manager()
-    alert = manager.add_cost_alert(
+    manager.add_cost_alert(
         threshold_usd=threshold_usd,
         alert_type="warning",
         webhook_url=webhook_url if webhook_url else None,
     )
-    
+
     return f"""# 🔔 Cost Alert Set
 
 **Threshold**: ${threshold_usd:.2f}
 **Alert Type**: Warning
-**Webhook**: {'Configured ✅' if webhook_url else 'Not set'}
+**Webhook**: {"Configured ✅" if webhook_url else "Not set"}
 
 When training costs exceed ${threshold_usd:.2f}, you will be notified.
 
@@ -705,11 +707,11 @@ async def send_training_notification(
     """Send a training notification via webhook."""
     manager = get_training_manager()
     success = await manager.send_notification(webhook_url, message, event_type)
-    
+
     if success:
         return f"✅ Notification sent successfully!\n\n**Event**: {event_type}\n**Message**: {message}"
     else:
-        return f"❌ Failed to send notification. Check webhook URL."
+        return "❌ Failed to send notification. Check webhook URL."
 
 
 async def upload_checkpoint_to_gdrive(
@@ -720,30 +722,27 @@ async def upload_checkpoint_to_gdrive(
     """Upload a checkpoint from instance to Google Drive."""
     try:
         from .ssh_tools import get_ssh_manager
-        
+
         manager = get_ssh_manager()
         loop = asyncio.get_event_loop()
-        
+
         # First, check if gdown/gdrive is installed
         stdout, stderr, code = await loop.run_in_executor(
             None,
-            lambda: manager.run_command(instance_ip, "which gdown || echo 'not found'")
+            lambda: manager.run_command(instance_ip, "which gdown || echo 'not found'"),
         )
-        
+
         if "not found" in stdout:
             # Install gdown
-            await loop.run_in_executor(
-                None,
-                lambda: manager.run_command(instance_ip, "pip install gdown")
-            )
-        
+            await loop.run_in_executor(None, lambda: manager.run_command(instance_ip, "pip install gdown"))
+
         # For upload, we need gdrive CLI or rclone
         # Using rclone as it's more reliable for uploads
         stdout, stderr, code = await loop.run_in_executor(
             None,
-            lambda: manager.run_command(instance_ip, "which rclone || echo 'not found'")
+            lambda: manager.run_command(instance_ip, "which rclone || echo 'not found'"),
         )
-        
+
         if "not found" in stdout:
             return f"""# ⚠️ rclone Not Installed
 
@@ -761,17 +760,17 @@ rclone copy {checkpoint_path} gdrive:checkpoints/
 
 Alternatively, use the checkpoint backup feature to download locally first.
 """
-        
+
         # Upload using rclone
         folder = gdrive_folder_id if gdrive_folder_id else "verda-checkpoints"
         stdout, stderr, code = await loop.run_in_executor(
             None,
             lambda: manager.run_command(
                 instance_ip,
-                f"rclone copy {checkpoint_path} gdrive:{folder}/ --progress"
-            )
+                f"rclone copy {checkpoint_path} gdrive:{folder}/ --progress",
+            ),
         )
-        
+
         if code == 0:
             return f"""# ✅ Checkpoint Uploaded to Google Drive
 
@@ -782,7 +781,7 @@ Upload complete! Your checkpoint is safely backed up.
 """
         else:
             return f"❌ Upload failed: {stderr}"
-            
+
     except Exception as e:
         return f"❌ Error uploading checkpoint: {e}"
 
@@ -796,30 +795,32 @@ async def list_available_frameworks() -> str:
         "llama": "LLaMA/Mistral fine-tuning with PEFT",
         "stable_diffusion": "Stable Diffusion with Diffusers",
     }
-    
+
     lines = [
         "# 📚 Available Framework Templates",
         "",
         "| Framework | Description |",
         "|-----------|-------------|",
     ]
-    
+
     for name, desc in frameworks.items():
         lines.append(f"| `{name}` | {desc} |")
-    
-    lines.extend([
-        "",
-        "## Usage",
-        "```",
-        'generate_checkpoint_script(framework="huggingface")',
-        'generate_startup_script(framework="llama")',
-        "```",
-        "",
-        "All templates include:",
-        "- ✅ 10-minute checkpoint saving",
-        "- ✅ Auto-resume from latest checkpoint",
-        "- ✅ Spot instance optimizations",
-        "- ✅ bf16 mixed precision for modern GPUs",
-    ])
-    
+
+    lines.extend(
+        [
+            "",
+            "## Usage",
+            "```",
+            'generate_checkpoint_script(framework="huggingface")',
+            'generate_startup_script(framework="llama")',
+            "```",
+            "",
+            "All templates include:",
+            "- ✅ 10-minute checkpoint saving",
+            "- ✅ Auto-resume from latest checkpoint",
+            "- ✅ Spot instance optimizations",
+            "- ✅ bf16 mixed precision for modern GPUs",
+        ]
+    )
+
     return "\n".join(lines)

@@ -73,13 +73,9 @@ class Config:
         client_secret = data.get("client_secret", "")
 
         if not client_id or client_id == "your-client-id-here":
-            raise ValueError(
-                "client_id is required. Please set it in config.yaml"
-            )
+            raise ValueError("client_id is required. Please set it in config.yaml")
         if not client_secret or client_secret == "your-client-secret-here":
-            raise ValueError(
-                "client_secret is required. Please set it in config.yaml"
-            )
+            raise ValueError("client_secret is required. Please set it in config.yaml")
 
         # Parse defaults
         defaults_data = data.get("defaults", {})

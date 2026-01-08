@@ -9,23 +9,24 @@ Handles:
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class InstanceMode(Enum):
     """Instance pricing mode."""
+
     SPOT = "spot"
     ON_DEMAND = "on_demand"
 
 
 class SpotStatus(Enum):
     """Spot instance status."""
+
     RUNNING = "running"
     EVICTED = "evicted"
     UNAVAILABLE = "unavailable"
@@ -39,53 +40,101 @@ class SpotStatus(Enum):
 GPU_PRICING_FULL = {
     # NVLink GPUs
     "GB300": {
-        "on_demand": 5.45, "spot": 1.36, "vram_gb": 288, "multi_gpu": [1, 2, 4],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 5.45,
+        "spot": 1.36,
+        "vram_gb": 288,
+        "multi_gpu": [1, 2, 4],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "B300": {
-        "on_demand": 4.95, "spot": 1.24, "vram_gb": 262, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 4.95,
+        "spot": 1.24,
+        "vram_gb": 262,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "B200": {
-        "on_demand": 3.79, "spot": 0.95, "vram_gb": 180, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 3.79,
+        "spot": 0.95,
+        "vram_gb": 180,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "H200": {
-        "on_demand": 2.99, "spot": 0.75, "vram_gb": 141, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 2.99,
+        "spot": 0.75,
+        "vram_gb": 141,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "H100": {
-        "on_demand": 2.29, "spot": 0.57, "vram_gb": 80, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 2.29,
+        "spot": 0.57,
+        "vram_gb": 80,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "A100_80G": {
-        "on_demand": 1.29, "spot": 0.32, "vram_gb": 80, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 1.29,
+        "spot": 0.32,
+        "vram_gb": 80,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "A100_40G": {
-        "on_demand": 0.7211, "spot": 0.18, "vram_gb": 40, "multi_gpu": [1, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 0.7211,
+        "spot": 0.18,
+        "vram_gb": 40,
+        "multi_gpu": [1, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "V100": {
-        "on_demand": 0.1381, "spot": 0.035, "vram_gb": 16, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 0.1381,
+        "spot": 0.035,
+        "vram_gb": 16,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     # General Compute
     "RTX_PRO_6000": {
-        "on_demand": 1.39, "spot": 0.35, "vram_gb": 96, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 1.39,
+        "spot": 0.35,
+        "vram_gb": 96,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "L40S": {
-        "on_demand": 0.9143, "spot": 0.23, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 0.9143,
+        "spot": 0.23,
+        "vram_gb": 48,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "RTX_6000_ADA": {
-        "on_demand": 0.8262, "spot": 0.21, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "75%", "spot_available": True
+        "on_demand": 0.8262,
+        "spot": 0.21,
+        "vram_gb": 48,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "75%",
+        "spot_available": True,
     },
     "A6000": {
-        "on_demand": 0.49, "spot": 0.12, "vram_gb": 48, "multi_gpu": [1, 2, 4, 8],
-        "spot_savings": "76%", "spot_available": True
+        "on_demand": 0.49,
+        "spot": 0.12,
+        "vram_gb": 48,
+        "multi_gpu": [1, 2, 4, 8],
+        "spot_savings": "76%",
+        "spot_available": True,
     },
 }
 
@@ -93,6 +142,7 @@ GPU_PRICING_FULL = {
 @dataclass
 class SpotDeploymentConfig:
     """Configuration for spot deployment with failover."""
+
     gpu_type: str
     gpu_count: int
     prefer_spot: bool = True
@@ -107,6 +157,7 @@ class SpotDeploymentConfig:
 @dataclass
 class SpotSession:
     """Active spot training session."""
+
     instance_id: str
     instance_ip: Optional[str]
     gpu_type: str
@@ -122,30 +173,37 @@ class SpotSession:
 
 class SpotManager:
     """Manages spot instances with auto-failover to on-demand."""
-    
+
     def __init__(self):
         self.active_session: Optional[SpotSession] = None
         self.eviction_history: List[Dict[str, Any]] = []
         self._monitor_task: Optional[asyncio.Task] = None
         self._monitor_interval: int = 60  # Check every 60 seconds
-    
+
     def get_pricing(self, gpu_type: str) -> Dict[str, Any]:
         """Get full pricing info for a GPU type."""
         gpu_key = gpu_type.upper().replace("-", "_")
-        return GPU_PRICING_FULL.get(gpu_key, {
-            "on_demand": 0, "spot": 0, "vram_gb": 0, 
-            "multi_gpu": [1], "spot_savings": "0%", "spot_available": False
-        })
-    
+        return GPU_PRICING_FULL.get(
+            gpu_key,
+            {
+                "on_demand": 0,
+                "spot": 0,
+                "vram_gb": 0,
+                "multi_gpu": [1],
+                "spot_savings": "0%",
+                "spot_available": False,
+            },
+        )
+
     def calculate_savings(self, gpu_type: str, gpu_count: int, hours: float) -> Dict[str, Any]:
         """Calculate savings using spot vs on-demand."""
         pricing = self.get_pricing(gpu_type)
-        
+
         on_demand_cost = pricing["on_demand"] * gpu_count * hours
         spot_cost = pricing["spot"] * gpu_count * hours
         savings = on_demand_cost - spot_cost
         savings_pct = (savings / on_demand_cost * 100) if on_demand_cost > 0 else 0
-        
+
         return {
             "gpu_type": gpu_type,
             "gpu_count": gpu_count,
@@ -160,14 +218,15 @@ class SpotManager:
             "checkpoint_required": True,
             "checkpoint_interval_recommended": 10,  # minutes
         }
-    
+
     async def check_spot_availability(self, gpu_type: str, gpu_count: int) -> Dict[str, Any]:
         """Check if spot is available for the requested GPU config."""
         try:
             from .client import get_client
+
             client = get_client()
             result = await client.check_spot_availability(gpu_type, gpu_count)
-            
+
             return {
                 "available": result.available,
                 "location": result.location,
@@ -183,10 +242,10 @@ class SpotManager:
                 "mode": "on_demand_fallback",
                 "error": str(e),
             }
-    
+
     async def smart_deploy(self, config: SpotDeploymentConfig) -> Dict[str, Any]:
         """Deploy with smart spot/on-demand selection and failover.
-        
+
         Strategy:
         1. Try spot first (if prefer_spot=True)
         2. If spot unavailable, try other locations
@@ -194,8 +253,9 @@ class SpotManager:
         4. Set up monitoring for eviction
         """
         from .client import get_client
+
         client = get_client()
-        
+
         result = {
             "success": False,
             "mode": None,
@@ -205,16 +265,14 @@ class SpotManager:
             "message": "",
             "checkpoint_reminder": f"⚠️ CRITICAL: Save checkpoints every {config.checkpoint_interval_minutes} minutes!",
         }
-        
+
         # Try spot first
         if config.prefer_spot:
             for location in config.fallback_locations:
                 try:
                     # Check availability
-                    avail = await client.check_spot_availability(
-                        config.gpu_type, config.gpu_count, location
-                    )
-                    
+                    avail = await client.check_spot_availability(config.gpu_type, config.gpu_count, location)
+
                     if avail.available:
                         # Deploy spot instance
                         instance = await client.create_instance(
@@ -225,10 +283,10 @@ class SpotManager:
                             script_id=config.script_id,
                             is_spot=True,
                         )
-                        
+
                         # Wait for ready
                         instance = await client.wait_for_ready(instance.id)
-                        
+
                         # Create session
                         self.active_session = SpotSession(
                             instance_id=instance.id,
@@ -238,26 +296,28 @@ class SpotManager:
                             mode=InstanceMode.SPOT,
                             started_at=datetime.now(),
                         )
-                        
-                        result.update({
-                            "success": True,
-                            "mode": "SPOT",
-                            "instance_id": instance.id,
-                            "instance_ip": instance.ip_address,
-                            "location": location,
-                            "message": f"✅ SPOT instance deployed! Saving {self.get_pricing(config.gpu_type)['spot_savings']}!",
-                        })
-                        
+
+                        result.update(
+                            {
+                                "success": True,
+                                "mode": "SPOT",
+                                "instance_id": instance.id,
+                                "instance_ip": instance.ip_address,
+                                "location": location,
+                                "message": f"✅ SPOT instance deployed! Saving {self.get_pricing(config.gpu_type)['spot_savings']}!",
+                            }
+                        )
+
                         # Start monitoring if auto_failover enabled
                         if config.auto_failover:
                             await self.start_monitoring(config)
-                        
+
                         return result
-                        
+
                 except Exception as e:
                     logger.warning(f"Spot deploy failed at {location}: {e}")
                     continue
-        
+
         # Fallback to on-demand
         if config.auto_failover or not config.prefer_spot:
             try:
@@ -269,9 +329,9 @@ class SpotManager:
                     script_id=config.script_id,
                     is_spot=False,
                 )
-                
+
                 instance = await client.wait_for_ready(instance.id)
-                
+
                 self.active_session = SpotSession(
                     instance_id=instance.id,
                     instance_ip=instance.ip_address,
@@ -280,28 +340,30 @@ class SpotManager:
                     mode=InstanceMode.ON_DEMAND,
                     started_at=datetime.now(),
                 )
-                
-                result.update({
-                    "success": True,
-                    "mode": "ON_DEMAND",
-                    "instance_id": instance.id,
-                    "instance_ip": instance.ip_address,
-                    "location": config.fallback_locations[0],
-                    "message": "✅ On-demand instance deployed (spot unavailable).",
-                })
-                
+
+                result.update(
+                    {
+                        "success": True,
+                        "mode": "ON_DEMAND",
+                        "instance_id": instance.id,
+                        "instance_ip": instance.ip_address,
+                        "location": config.fallback_locations[0],
+                        "message": "✅ On-demand instance deployed (spot unavailable).",
+                    }
+                )
+
                 return result
-                
+
             except Exception as e:
                 result["message"] = f"❌ Deployment failed: {e}"
                 return result
-        
+
         result["message"] = "❌ No instances available."
         return result
-    
+
     async def handle_eviction(self, config: SpotDeploymentConfig) -> Dict[str, Any]:
         """Handle spot eviction with automatic recovery.
-        
+
         Steps:
         1. Log eviction event
         2. Try to get new spot instance
@@ -310,7 +372,7 @@ class SpotManager:
         """
         if not self.active_session:
             return {"success": False, "message": "No active session to recover"}
-        
+
         # Record eviction
         eviction_record = {
             "timestamp": datetime.now().isoformat(),
@@ -320,12 +382,12 @@ class SpotManager:
         }
         self.eviction_history.append(eviction_record)
         self.active_session.eviction_count += 1
-        
-        logger.warning(f"⚠️ SPOT EVICTION DETECTED! Attempting recovery...")
-        
+
+        logger.warning("⚠️ SPOT EVICTION DETECTED! Attempting recovery...")
+
         # Try to redeploy
         result = await self.smart_deploy(config)
-        
+
         if result["success"]:
             result["recovery"] = {
                 "eviction_count": self.active_session.eviction_count,
@@ -333,37 +395,38 @@ class SpotManager:
                 "resume_from": "Last checkpoint (should be within 10 minutes)",
             }
             result["message"] = f"🔄 RECOVERED from eviction! Mode: {result['mode']}"
-        
+
         return result
-    
+
     async def start_monitoring(self, config: SpotDeploymentConfig):
         """Start background monitoring for spot eviction."""
         if self._monitor_task and not self._monitor_task.done():
             return
-        
+
         async def monitor_loop():
             while self.active_session and self.active_session.is_active:
                 try:
                     from .client import get_client
+
                     client = get_client()
-                    
+
                     # Check instance status
                     instance = await client.get_instance(self.active_session.instance_id)
-                    
+
                     if instance.status in ("terminated", "stopped", "error"):
                         logger.warning(f"Instance status: {instance.status} - possible eviction!")
                         await self.handle_eviction(config)
                         break
-                    
+
                     await asyncio.sleep(self._monitor_interval)
-                    
+
                 except Exception as e:
                     logger.error(f"Monitor error: {e}")
                     await asyncio.sleep(self._monitor_interval)
-        
+
         self._monitor_task = asyncio.create_task(monitor_loop())
         logger.info("Spot eviction monitoring started")
-    
+
     def stop_monitoring(self):
         """Stop background monitoring."""
         if self._monitor_task:
@@ -372,10 +435,10 @@ class SpotManager:
         if self.active_session:
             self.active_session.is_active = False
         logger.info("Spot eviction monitoring stopped")
-    
+
     async def switch_mode(self, to_mode: InstanceMode) -> Dict[str, Any]:
         """Manually switch between spot and on-demand.
-        
+
         IMPORTANT: This will:
         1. Create new instance in target mode
         2. Wait for it to be ready
@@ -384,69 +447,69 @@ class SpotManager:
         """
         if not self.active_session:
             return {"success": False, "message": "No active session"}
-        
+
         current_mode = self.active_session.mode
         if current_mode == to_mode:
             return {"success": True, "message": f"Already in {to_mode.value} mode"}
-        
+
         config = SpotDeploymentConfig(
             gpu_type=self.active_session.gpu_type,
             gpu_count=self.active_session.gpu_count,
             prefer_spot=(to_mode == InstanceMode.SPOT),
             auto_failover=False,
         )
-        
+
         old_instance_id = self.active_session.instance_id
-        
+
         # Deploy new instance
         result = await self.smart_deploy(config)
-        
+
         if result["success"]:
             result["switched_from"] = current_mode.value
             result["old_instance_id"] = old_instance_id
             result["message"] = f"🔄 Switched from {current_mode.value} to {to_mode.value}!"
             result["action_required"] = "Resume training from last checkpoint"
-        
+
         return result
-    
+
     def format_savings_report(self, savings: Dict[str, Any]) -> str:
         """Format savings calculation for display."""
         return f"""# 💰 Spot vs On-Demand Comparison
 
 ## Configuration
-- **GPU**: {savings['gpu_type']} x{savings['gpu_count']}
-- **Duration**: {savings['hours']} hours
+- **GPU**: {savings["gpu_type"]} x{savings["gpu_count"]}
+- **Duration**: {savings["hours"]} hours
 
 ## Pricing Comparison
 | Mode | Hourly Rate | Total Cost |
 |------|-------------|------------|
-| **SPOT** | ${savings['spot_hourly']:.2f}/hr | **${savings['spot_total']:.2f}** |
-| On-Demand | ${savings['on_demand_hourly']:.2f}/hr | ${savings['on_demand_total']:.2f} |
+| **SPOT** | ${savings["spot_hourly"]:.2f}/hr | **${savings["spot_total"]:.2f}** |
+| On-Demand | ${savings["on_demand_hourly"]:.2f}/hr | ${savings["on_demand_total"]:.2f} |
 
 ## 💵 SAVINGS WITH SPOT
-- **You Save**: ${savings['savings']:.2f} ({savings['savings_percent']:.0f}%)
-- **Recommendation**: **{savings['recommendation']}**
+- **You Save**: ${savings["savings"]:.2f} ({savings["savings_percent"]:.0f}%)
+- **Recommendation**: **{savings["recommendation"]}**
 
 ## ⚠️ SPOT REQUIREMENTS
-- ✅ **Checkpoints every {savings['checkpoint_interval_recommended']} minutes** (CRITICAL!)
+- ✅ **Checkpoints every {savings["checkpoint_interval_recommended"]} minutes** (CRITICAL!)
 - ✅ Training script must support checkpoint resume
 - ✅ Volume attached for persistent storage
 - ⚠️ Spot can be evicted at ANY time
 - ⚠️ Auto-failover to on-demand available
 """
-    
+
     def format_session_status(self) -> str:
         """Format current session status."""
         if not self.active_session:
             return "# 📊 No Active Session\n\nNo training session is currently running."
-        
+
         s = self.active_session
         duration = datetime.now() - s.started_at
         hours = duration.total_seconds() / 3600
         pricing = self.get_pricing(s.gpu_type)
         rate = pricing["spot"] if s.mode == InstanceMode.SPOT else pricing["on_demand"]
         cost = rate * s.gpu_count * hours
-        
+
         return f"""# 📊 Active Training Session
 
 ## Instance Info
@@ -456,7 +519,7 @@ class SpotManager:
 - **Mode**: **{s.mode.value.upper()}**
 
 ## Session Stats
-- **Started**: {s.started_at.strftime('%Y-%m-%d %H:%M:%S')}
+- **Started**: {s.started_at.strftime("%Y-%m-%d %H:%M:%S")}
 - **Duration**: {hours:.2f} hours
 - **Checkpoints**: {s.checkpoint_count}
 - **Evictions**: {s.eviction_count}
@@ -466,8 +529,8 @@ class SpotManager:
 - **Current Cost**: ${cost:.2f}
 
 ## Status
-- **Active**: {'✅ Yes' if s.is_active else '❌ No'}
-- **Monitoring**: {'✅ Enabled' if self._monitor_task else '❌ Disabled'}
+- **Active**: {"✅ Yes" if s.is_active else "❌ No"}
+- **Monitoring**: {"✅ Enabled" if self._monitor_task else "❌ Disabled"}
 """
 
 
@@ -487,6 +550,7 @@ def get_spot_manager() -> SpotManager:
 # Async wrapper functions for MCP tools
 # =============================================================================
 
+
 async def compare_spot_vs_ondemand(gpu_type: str, gpu_count: int, hours: float) -> str:
     """Compare spot vs on-demand pricing."""
     manager = get_spot_manager()
@@ -505,7 +569,7 @@ async def smart_deploy_instance(
 ) -> str:
     """Smart deploy with spot preference and auto-failover."""
     manager = get_spot_manager()
-    
+
     config = SpotDeploymentConfig(
         gpu_type=gpu_type,
         gpu_count=gpu_count,
@@ -515,9 +579,9 @@ async def smart_deploy_instance(
         volume_id=volume_id if volume_id else None,
         script_id=script_id if script_id else None,
     )
-    
+
     result = await manager.smart_deploy(config)
-    
+
     lines = [
         f"# {'✅' if result['success'] else '❌'} Deployment Result",
         "",
@@ -529,18 +593,20 @@ async def smart_deploy_instance(
         "",
         f"**Message**: {result['message']}",
         "",
-        result.get('checkpoint_reminder', ''),
+        result.get("checkpoint_reminder", ""),
     ]
-    
-    if result['success'] and result.get('mode') == 'SPOT':
+
+    if result["success"] and result.get("mode") == "SPOT":
         pricing = manager.get_pricing(gpu_type)
-        lines.extend([
-            "",
-            f"## 💰 You're Saving {pricing['spot_savings']}!",
-            f"- Spot Rate: ${pricing['spot'] * gpu_count:.2f}/hr",
-            f"- On-Demand would be: ${pricing['on_demand'] * gpu_count:.2f}/hr",
-        ])
-    
+        lines.extend(
+            [
+                "",
+                f"## 💰 You're Saving {pricing['spot_savings']}!",
+                f"- Spot Rate: ${pricing['spot'] * gpu_count:.2f}/hr",
+                f"- On-Demand would be: ${pricing['on_demand'] * gpu_count:.2f}/hr",
+            ]
+        )
+
     return "\n".join(lines)
 
 
@@ -549,18 +615,18 @@ async def switch_instance_mode(to_spot: bool = True) -> str:
     manager = get_spot_manager()
     target_mode = InstanceMode.SPOT if to_spot else InstanceMode.ON_DEMAND
     result = await manager.switch_mode(target_mode)
-    
-    if result['success']:
+
+    if result["success"]:
         return f"""# 🔄 Mode Switch Complete
 
-**Switched to**: {result.get('mode', target_mode.value)}
-**New Instance ID**: {result.get('instance_id', 'N/A')}
-**New IP**: {result.get('instance_ip', 'N/A')}
+**Switched to**: {result.get("mode", target_mode.value)}
+**New Instance ID**: {result.get("instance_id", "N/A")}
+**New IP**: {result.get("instance_ip", "N/A")}
 
 ## ⚠️ Action Required
-{result.get('action_required', 'Resume training from last checkpoint')}
+{result.get("action_required", "Resume training from last checkpoint")}
 
-**Old Instance**: {result.get('old_instance_id', 'N/A')}
+**Old Instance**: {result.get("old_instance_id", "N/A")}
 (You may want to delete the old instance after confirming new one works)
 """
     else:
