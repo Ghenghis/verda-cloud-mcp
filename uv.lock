@@ -2315,13 +2315,15 @@ wheels = [
 
 [[package]]
 name = "verda-cloud-mcp"
-version = "2.5.0"
+version = "2.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "mcp", extra = ["cli"] },
     { name = "paramiko" },
+    { name = "pydantic" },
     { name = "pyyaml" },
     { name = "verda" },
 ]
@@ -2355,12 +2357,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.0" },
+    { name = "fastapi", specifier = ">=0.109.0" },
     { name = "fastapi", marker = "extra == 'dashboard'", specifier = ">=0.109.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.2.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
     { name = "paramiko", specifier = ">=3.0.0" },
     { name = "playwright", marker = "extra == 'test'", specifier = ">=1.40.0" },
+    { name = "pydantic", specifier = ">=2.5.0" },
     { name = "pydantic", marker = "extra == 'dashboard'", specifier = ">=2.5.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=0.23.0" },

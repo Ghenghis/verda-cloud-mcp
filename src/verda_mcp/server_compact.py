@@ -84,14 +84,21 @@ async def instance(
         lines = ["# Your Verda Cloud Instances\n"]
         for inst in instances:
             ip_info = f", IP: {inst.ip_address}" if inst.ip_address else ""
-            lines.append(f"- **{inst.hostname}** (`{inst.id}`)\n  Status: {inst.status}, Type: {inst.instance_type}{ip_info}")
+            lines.append(
+                f"- **{inst.hostname}** (`{inst.id}`)\n  Status: {inst.status}, Type: {inst.instance_type}{ip_info}"
+            )
         return "\n".join(lines)
 
     elif action == "status":
         if not instance_id:
             return "❌ Error: instance_id required for status action"
         inst = await client.get_instance(instance_id)
-        result = [f"# Instance: {inst.hostname}", f"- **ID**: `{inst.id}`", f"- **Status**: {inst.status}", f"- **Type**: {inst.instance_type}"]
+        result = [
+            f"# Instance: {inst.hostname}",
+            f"- **ID**: `{inst.id}`",
+            f"- **Status**: {inst.status}",
+            f"- **Type**: {inst.instance_type}",
+        ]
         if inst.ip_address:
             result.extend([f"- **IP**: {inst.ip_address}", "\n```bash", f"ssh root@{inst.ip_address}", "```"])
         return "\n".join(result)
@@ -311,6 +318,7 @@ async def remote(
     """
     try:
         from .ssh_tools import SSHManager
+
         ssh = SSHManager()
     except ImportError:
         return "❌ SSH tools not available (install paramiko)"
@@ -346,11 +354,15 @@ async def remote(
         return f"```\n{result}\n```"
 
     elif action == "logs":
-        result = await ssh.run_command(instance_ip, f"tail -n {lines} ~/training.log 2>/dev/null || echo 'No training log found'")
+        result = await ssh.run_command(
+            instance_ip, f"tail -n {lines} ~/training.log 2>/dev/null || echo 'No training log found'"
+        )
         return f"```\n{result}\n```"
 
     elif action == "progress":
-        gpu = await ssh.run_command(instance_ip, "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader")
+        gpu = await ssh.run_command(
+            instance_ip, "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader"
+        )
         logs = await ssh.run_command(instance_ip, "tail -n 20 ~/training.log 2>/dev/null || echo 'No log'")
         return f"# Training Progress\n## GPU\n```\n{gpu}\n```\n## Logs\n```\n{logs}\n```"
 
@@ -420,8 +432,8 @@ async def gpu(
         vram_needed = model_size * 4
         recommendations = []
         for name, info in GPU_DATABASE.items():
-            if info['vram_gb'] >= vram_needed:
-                recommendations.append((name, info['spot'], info['vram_gb']))
+            if info["vram_gb"] >= vram_needed:
+                recommendations.append((name, info["spot"], info["vram_gb"]))
         recommendations.sort(key=lambda x: x[1])
         lines = [f"# GPU Recommendations for {model_size}B model\nVRAM needed: ~{vram_needed:.0f}GB\n"]
         for name, price, vram in recommendations[:5]:
@@ -435,16 +447,16 @@ async def gpu(
         budget_max = budget or 10.0
         best = None
         for name, info in GPU_DATABASE.items():
-            if info['vram_gb'] >= vram and info['spot'] <= budget_max:
-                if not best or info['spot'] < best[1]:
-                    best = (name, info['spot'], info['vram_gb'])
+            if info["vram_gb"] >= vram and info["spot"] <= budget_max:
+                if not best or info["spot"] < best[1]:
+                    best = (name, info["spot"], info["vram_gb"])
         if best:
             return f"# Optimal GPU\n**{best[0]}** ({best[2]}GB) at ${best[1]:.2f}/hr"
         return "❌ No GPU matches criteria"
 
     elif action == "best_value":
         budget_max = budget or 1.0
-        options = [(n, i['spot'], i['vram_gb']) for n, i in GPU_DATABASE.items() if i['spot'] <= budget_max]
+        options = [(n, i["spot"], i["vram_gb"]) for n, i in GPU_DATABASE.items() if i["spot"] <= budget_max]
         options.sort(key=lambda x: -x[2])  # Most VRAM for budget
         if options:
             best = options[0]
@@ -455,8 +467,8 @@ async def gpu(
         if not model_size:
             return "❌ Error: model_size required"
         vram = model_size * 4
-        options = [(n, i) for n, i in GPU_DATABASE.items() if i['vram_gb'] >= vram]
-        options.sort(key=lambda x: -x[1].get('fp16_tflops', 0))
+        options = [(n, i) for n, i in GPU_DATABASE.items() if i["vram_gb"] >= vram]
+        options.sort(key=lambda x: -x[1].get("fp16_tflops", 0))
         if options:
             best = options[0]
             return f"# Fastest GPU for {model_size}B\n**{best[0]}** - {best[1].get('fp16_tflops', 'N/A')} TFLOPS"
@@ -511,17 +523,21 @@ async def spot(
         count = gpu_count or 1
         hrs = hours or 20
         info = GPU_DATABASE.get(gpu, {})
-        spot_cost = info.get('spot', 0) * count * hrs
-        od_cost = info.get('on_demand', 0) * count * hrs
+        spot_cost = info.get("spot", 0) * count * hrs
+        od_cost = info.get("on_demand", 0) * count * hrs
         savings = od_cost - spot_cost
         pct = (savings / od_cost * 100) if od_cost > 0 else 0
         return f"# Spot Savings: {gpu} x{count} for {hrs}hrs\n- Spot: ${spot_cost:.2f}\n- On-Demand: ${od_cost:.2f}\n- **Savings: ${savings:.2f} ({pct:.0f}%)**"
 
     elif action == "compare":
-        lines = ["# Spot vs On-Demand\n", "| GPU | Spot | On-Demand | Savings |", "|-----|------|-----------|---------|"]
+        lines = [
+            "# Spot vs On-Demand\n",
+            "| GPU | Spot | On-Demand | Savings |",
+            "|-----|------|-----------|---------|",
+        ]
         for name, info in list(GPU_DATABASE.items())[:8]:
-            spot_p = info.get('spot', 0)
-            od_p = info.get('on_demand', 0)
+            spot_p = info.get("spot", 0)
+            od_p = info.get("on_demand", 0)
             sav = ((od_p - spot_p) / od_p * 100) if od_p > 0 else 0
             lines.append(f"| {name} | ${spot_p:.2f} | ${od_p:.2f} | {sav:.0f}% |")
         return "\n".join(lines)
@@ -530,11 +546,11 @@ async def spot(
         lines = ["# 🔥 Power Deals\n", "For the price of 1x B300 On-Demand ($4.95/hr):\n"]
         b300_od = 4.95
         for name, info in GPU_DATABASE.items():
-            spot_p = info.get('spot', 0)
+            spot_p = info.get("spot", 0)
             if spot_p > 0:
                 count = int(b300_od / spot_p)
                 if count > 1:
-                    total_vram = info.get('vram_gb', 0) * count
+                    total_vram = info.get("vram_gb", 0) * count
                     lines.append(f"- **{count}x {name}** = ${spot_p * count:.2f}/hr ({total_vram}GB VRAM)")
         return "\n".join(lines)
 
@@ -580,6 +596,7 @@ async def live(
     elif action == "all":
         try:
             from .gpu_optimizer import GPU_DATABASE
+
             lines = ["# Live Availability\n"]
             for gpu in list(GPU_DATABASE.keys())[:8]:
                 avail = await client.check_spot_availability(gpu, 1)
@@ -762,7 +779,7 @@ async def cost(
         count = gpu_count or 1
         hrs = hours or 20
         info = GPU_DATABASE.get(gpu, {})
-        cost = info.get('spot', 0) * count * hrs
+        cost = info.get("spot", 0) * count * hrs
         return f"# Cost Estimate\n{gpu} x{count} for {hrs}hrs\n**${cost:.2f}** (spot)"
 
     elif action == "budget":
