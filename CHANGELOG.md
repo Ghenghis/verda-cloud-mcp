@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] - 2026-01-08
+
+### 🎯 COMPACT EDITION - 21 Mega-Tools
+
+Major consolidation: **104 tools → 21 mega-tools** (80% reduction)
+
+#### Mega-Tools with Action Parameter
+
+Each tool now uses an `action` parameter to access multiple capabilities:
+
+| Tool | Actions | Purpose |
+|------|---------|---------|
+| `instance` | deploy, list, start, stop, delete, status, check, images | Instance management |
+| `volume` | create, list, attach, detach | Storage management |
+| `script` | create, list, get, set_default, ssh_keys | Startup scripts |
+| `remote` | run, read, write, gpu, logs, kill, progress, list_dir, upload, download | SSH operations |
+| `gpu` | catalog, recommend, optimal, best_value, fastest, images | GPU selection |
+| `spot` | savings, compare, deals, matrix, budget, recommend | Spot pricing |
+| `live` | check, all, costs, now, matrix | Live availability |
+| `training` | setup, start, logs, checkpoints, progress, backup, kill, monitor | Training automation |
+| `watchdog` | enable, disable, status, check, report | Monitoring |
+| `cost` | estimate, running, budget, optimize, compare, history | Cost analytics |
+| `health` | instance, api, ssh, full, network | Health checks |
+| `deploy` | smart, failsafe, auto | Smart deployment |
+| `cluster` | create, batch, status, scale, shared_fs, list_fs | Multi-GPU clusters |
+| `gdrive` | file, folder, backup | Google Drive integration |
+| `notify` | send, training, budget, setup | Notifications |
+| `guide` | start, tips, mistakes, model_size, frameworks, speed | Training guides |
+| `model_hub` | list, search, info, download, category, lora, qlora, presets | 50+ models |
+| `dataset_hub` | list, download, prepare, tokenize, preview, stats | Dataset management |
+| `templates` | list, get, lora, qlora, full, inference | Training templates |
+| `distributed` | list, deepspeed, fsdp, accelerate, torchrun, multi_node | Distributed training |
+| `train` | intel, viz, profile, monitor, advisor | Training intelligence |
+
+#### Benefits
+
+- **Cleaner UI**: 21 tools instead of 104
+- **Same capabilities**: 200+ functions preserved
+- **Intuitive**: `action="list"` pattern across all tools
+- **Professional**: Organized by domain
+
+---
+
 ## [2.5.0] - 2026-01-08
 
 ### 🎯 Final Polish Edition - Full Integration & Automation
