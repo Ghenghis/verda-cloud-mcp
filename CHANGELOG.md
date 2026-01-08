@@ -9,6 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-01-08
+
+### 🚀 Performance Advisor - Speed Optimization & Best Practices
+
+#### Performance Advisor (9 new tools)
+- `fastest_gpu_config` - Get FASTEST GPU config within budget (multi-GPU SPOT!)
+- `best_value_gpu` - Get BEST VALUE config (TFLOPs per dollar)
+- `training_time_calc` - Calculate training time and cost estimates
+- `budget_plan` - Create budget management plan with alerts and actions
+- `speed_comparison` - Compare 1x, 2x, 4x, 8x GPU speedups
+- `first_timer_guide` - Quick start guide for beginners
+- `tips_and_tricks` - Pro tips organized by category
+- `common_mistakes` - Mistakes to avoid with fixes
+- `model_size_guide` - GPU recommendations by model size
+
+#### Multi-GPU Speed Insights
+- 4x GPUs = 3.5x speed (87.5% efficiency)
+- 8x GPUs = 6.5x speed (81.25% efficiency)
+- Multi-GPU SPOT often beats single On-Demand at same price!
+
+#### Budget Management
+- Automatic spending alerts (70%, 95% thresholds)
+- Action plans with specific commands
+- Training goal optimization (fastest, balanced, budget, best_value)
+
+#### First-Timer Support
+- 5-step quick start guide
+- Common mistakes to avoid
+- Model size → GPU recommendations
+- Tips organized by category (Save Money, Go Faster, Stay Safe, Monitor Well)
+
+### Changed
+- Total visible tools: **96** (was 87)
+- New module: `performance_advisor.py`
+- Updated tool count in server.py main()
+
+---
 
 ## [2.2.0] - 2026-01-07
 

@@ -2305,6 +2305,212 @@ async def self_test_all(instance_ip: str = "") -> str:
 
 
 # =============================================================================
+# Performance Advisor (NEW v2.3.0 - Speed Optimization & Best Practices)
+# =============================================================================
+
+try:
+    from .performance_advisor import (
+        calculate_training,
+        compare_gpu_speeds,
+        create_budget,
+        get_best_value,
+        get_common_mistakes,
+        get_fastest_config,
+        get_first_timer_guide,
+        get_model_guide,
+        get_tips_tricks,
+    )
+
+    PERF_ADVISOR_AVAILABLE = True
+except ImportError:
+    PERF_ADVISOR_AVAILABLE = False
+
+
+@mcp.tool()
+async def fastest_gpu_config(model_size_b: float = 7.0, budget: float = 10.0) -> str:
+    """Get FASTEST GPU configuration within budget.
+
+    Finds the maximum-speed multi-GPU SPOT configuration for your model.
+    4x GPUs = 3.5x speed, 8x GPUs = 6.5x speed!
+
+    Args:
+        model_size_b: Model size in billions (7, 13, 30, 70, etc.)
+        budget: Maximum hourly budget in USD.
+
+    Returns:
+        Fastest configuration with speedup factors.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_fastest_config(model_size_b, budget)
+
+
+@mcp.tool()
+async def best_value_gpu(model_size_b: float = 7.0, budget: float = 5.0) -> str:
+    """Get BEST VALUE GPU configuration (TFLOPs per dollar).
+
+    Finds the configuration with maximum performance per dollar spent.
+    Multi-GPU SPOT often beats single On-Demand at same price!
+
+    Args:
+        model_size_b: Model size in billions.
+        budget: Maximum hourly budget in USD.
+
+    Returns:
+        Best value configuration with value scores.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_best_value(model_size_b, budget)
+
+
+@mcp.tool()
+async def training_time_calc(
+    model_size_b: float = 7.0,
+    dataset_tokens_b: float = 1.0,
+    gpu_type: str = "B300",
+    gpu_count: int = 1,
+) -> str:
+    """Calculate training time and cost for configuration.
+
+    Estimates hours needed and total cost for spot vs on-demand.
+    Essential for budget planning!
+
+    Args:
+        model_size_b: Model size in billions.
+        dataset_tokens_b: Dataset size in billions of tokens.
+        gpu_type: GPU type (B300, H100, A6000, etc.)
+        gpu_count: Number of GPUs (1, 2, 4, 8).
+
+    Returns:
+        Time estimate with cost breakdown.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return calculate_training(model_size_b, dataset_tokens_b, gpu_type, gpu_count)
+
+
+@mcp.tool()
+async def budget_plan(
+    total_budget: float = 50.0,
+    model_size_b: float = 7.0,
+    goal: str = "balanced",
+) -> str:
+    """Create budget management plan with alerts and actions.
+
+    Generates a complete spending plan with:
+    - Recommended GPU config for your budget
+    - Max training hours
+    - Alert thresholds (70%, 95%)
+    - Action plan steps
+
+    Args:
+        total_budget: Total available budget in USD.
+        model_size_b: Model size in billions.
+        goal: Training goal (fastest, balanced, budget, best_value).
+
+    Returns:
+        Complete budget management plan.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return create_budget(total_budget, model_size_b, goal)
+
+
+@mcp.tool()
+async def speed_comparison(gpu_type: str = "B300") -> str:
+    """Compare training speeds for 1x, 2x, 4x, 8x GPU configs.
+
+    Shows speedup factors and cost for each configuration.
+    See exactly how much faster multi-GPU training is!
+
+    Args:
+        gpu_type: GPU type to compare (B300, H100, A6000, etc.)
+
+    Returns:
+        Speed comparison table with value ratings.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return compare_gpu_speeds(gpu_type)
+
+
+@mcp.tool()
+async def first_timer_guide() -> str:
+    """Get quick start guide for first-time users.
+
+    5-step guide covering:
+    1. GPU selection
+    2. SPOT instances (75% savings!)
+    3. Checkpoint setup (CRITICAL!)
+    4. Training monitoring
+    5. Budget management
+
+    Returns:
+        Step-by-step guide with commands and tips.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_first_timer_guide()
+
+
+@mcp.tool()
+async def tips_and_tricks() -> str:
+    """Get tips and tricks for efficient training.
+
+    Categories:
+    - 💰 Save Money (SPOT, multi-GPU deals)
+    - ⚡ Go Faster (scaling, batch sizes)
+    - 🛡️ Stay Safe (checkpoints, monitoring)
+    - 📊 Monitor Well (dashboards, alerts)
+
+    Returns:
+        Comprehensive tips organized by category.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_tips_tricks()
+
+
+@mcp.tool()
+async def common_mistakes() -> str:
+    """Get common mistakes to avoid.
+
+    Learn from others' mistakes:
+    - Using On-Demand instead of SPOT
+    - Not enabling checkpoints
+    - Wrong GPU for model size
+    - No budget monitoring
+    - Using 1 GPU when multi-GPU is same price
+
+    Returns:
+        Mistakes with impact and fixes.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_common_mistakes()
+
+
+@mcp.tool()
+async def model_size_guide() -> str:
+    """Get guide for choosing GPU based on model size.
+
+    Recommendations for:
+    - 7B models (starting point)
+    - 13B models (better quality)
+    - 30B models (serious projects)
+    - 70B models (production quality)
+    - 180B+ models (cutting edge)
+
+    Returns:
+        Model size guide with GPU recommendations.
+    """
+    if not PERF_ADVISOR_AVAILABLE:
+        return "❌ Performance advisor not available."
+    return get_model_guide()
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
@@ -2373,6 +2579,11 @@ def main():
     else:
         features.append("❌ Testing tools not available")
 
+    if PERF_ADVISOR_AVAILABLE:
+        features.append("✅ Performance Advisor (9 tools): Speed Optimization, Budget Planning, Best Practices")
+    else:
+        features.append("❌ Performance advisor not available")
+
     for f in features:
         logger.info(f)
 
@@ -2384,13 +2595,12 @@ def main():
     extended_tools = 7 if EXTENDED_TOOLS_AVAILABLE else 0
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
     training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
-    smart_deployer_tools = (
-        4 if SMART_DEPLOYER_AVAILABLE else 0
-    )  # best_deals, power_deals, deploy_failsafe, available_now
+    smart_deployer_tools = 4 if SMART_DEPLOYER_AVAILABLE else 0
     gpu_optimizer_tools = 4 if GPU_OPTIMIZER_AVAILABLE else 0
     live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
     advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
     testing_tools = 3 if TESTING_TOOLS_AVAILABLE else 0
+    perf_advisor_tools = 9 if PERF_ADVISOR_AVAILABLE else 0  # NEW v2.3.0
     total = (
         base_tools
         + ssh_tools
@@ -2404,6 +2614,7 @@ def main():
         + live_data_tools
         + advanced_tools
         + testing_tools
+        + perf_advisor_tools
     )
 
     logger.info(f"📊 Total Tools Available: {total}")
