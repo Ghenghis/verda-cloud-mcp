@@ -4,9 +4,7 @@ Consolidates 104+ tools into 35 mega-tools with action parameters.
 Each mega-tool bundles related functions for a cleaner MCP interface.
 """
 
-import asyncio
 import logging
-from datetime import datetime
 from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
@@ -353,7 +351,7 @@ async def remote(
 
     elif action == "progress":
         gpu = await ssh.run_command(instance_ip, "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader")
-        logs = await ssh.run_command(instance_ip, f"tail -n 20 ~/training.log 2>/dev/null || echo 'No log'")
+        logs = await ssh.run_command(instance_ip, "tail -n 20 ~/training.log 2>/dev/null || echo 'No log'")
         return f"# Training Progress\n## GPU\n```\n{gpu}\n```\n## Logs\n```\n{logs}\n```"
 
     elif action == "kill":
@@ -405,11 +403,9 @@ async def gpu(
         budget: Budget per hour in USD
     """
     try:
-        from .gpu_optimizer import GPU_DATABASE, GPUOptimizer
-        optimizer = GPUOptimizer()
+        from .gpu_optimizer import GPU_DATABASE
     except ImportError:
         GPU_DATABASE = {}
-        optimizer = None
 
     if action == "catalog" or action == "list":
         lines = ["# GPU Catalog\n", "| GPU | VRAM | Spot $/hr | On-Demand |", "|-----|------|-----------|-----------|"]
@@ -590,7 +586,7 @@ async def live(
                 status = "✅" if avail else "❌"
                 lines.append(f"- {status} {gpu}")
             return "\n".join(lines)
-        except:
+        except Exception:
             return "❌ Could not check availability"
 
     elif action == "costs":
@@ -702,8 +698,7 @@ async def watchdog(
         interval: Check interval in minutes (default: 10)
     """
     try:
-        from .watchdog import WatchDog
-        wd = WatchDog()
+        from .watchdog import WatchDog  # noqa: F401
     except ImportError:
         return "❌ WatchDog not available"
 
@@ -920,7 +915,7 @@ async def cluster(
         return "# GPU Clusters\nNo clusters found"
 
     elif action == "shared_fs":
-        return f"# Shared Filesystem\nCreate NFS mount for cluster training"
+        return "# Shared Filesystem\nCreate NFS mount for cluster training"
 
     elif action == "list_fs":
         return "# Shared Filesystems\nNone configured"
@@ -962,8 +957,7 @@ async def gdrive(
         remote_path: Remote path on instance
     """
     try:
-        from .gdrive_tools import GDriveTools
-        gd = GDriveTools()
+        from .gdrive_tools import GDriveTools  # noqa: F401
     except ImportError:
         return "❌ GDrive tools not available (install gdown)"
 
