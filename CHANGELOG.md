@@ -9,6 +9,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.0] - 2026-01-08
+
+### 🚀 v2.8.0 - Enhanced File Transfer & Cost Tracking
+
+#### Upload/Download with Progress (NEW)
+- `remote(action="upload")` - SFTP upload with speed tracking
+- `remote(action="download")` - SFTP download with speed tracking
+- 5-minute timeout for large files
+- Progress callback support
+
+#### Auto-Retry on Timeout (NEW)
+- `ssh_run_with_retry()` - 3 retries with 2s delay
+- Automatic recovery from flaky SSH connections
+- Logs each retry attempt for debugging
+
+#### Session Cost Tracking Tool (NEW)
+- `session_cost(action="start")` - Start tracking (instance_id, gpu_type)
+- `session_cost(action="check")` - Show running cost with projections
+- `session_cost(action="end")` - End session and show final cost
+- `session_cost(action="estimate")` - Project costs for hours
+- `session_cost(action="history")` - Show cumulative spend
+- Built-in GPU rate lookup (12 GPU types)
+
+### Changed
+- Total tools: **28 mega-tools**
+- New actions in `remote` tool: upload, download
+- New tool: `session_cost`
+
+---
+
+## [2.7.0] - 2026-01-08
+
+### 🛡️ v2.7.0 - Anti-Freeze & Timeout Protection
+
+#### Multi-Layer Timeout System (CRITICAL FIX)
+- **SSH Connect Timeout**: 10 seconds
+- **SSH Command Timeout**: 15 seconds
+- **Async Wrapper Timeout**: 20 seconds
+- **MCP Tool Timeout**: 30 seconds (NEW outer layer)
+
+#### @mcp_safe Decorator (NEW)
+- `timeout_utils.py` - New utility module
+- `@mcp_safe(timeout=N)` - Combined timeout + crash protection
+- `@with_timeout(N)` - Pure timeout decorator
+- `safe_return()` - Ensures tools never crash server
+
+#### Tools with Timeout Protection
+| Tool | Timeout | Status |
+|------|---------|--------|
+| remote | 30s | ✅ |
+| env_setup | 30s | ✅ |
+| model_download | 30s | ✅ |
+| benchmark | 45s | ✅ |
+| checkpoint | 30s | ✅ |
+| logs_stream | 30s | ✅ |
+| tensorboard | 30s | ✅ |
+
+#### Verbose Logging
+- All SSH operations log elapsed time
+- All MCP tools show progress
+- Connection reuse logged
+
+### Fixed
+- SSH tools no longer freeze indefinitely
+- MCP server no longer hangs on timeout
+- Crash protection catches all exceptions gracefully
+
+---
+
 ## [2.6.0] - 2026-01-08
 
 ### 🎯 COMPACT EDITION - 21 Mega-Tools

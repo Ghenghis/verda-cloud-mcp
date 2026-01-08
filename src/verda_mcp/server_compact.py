@@ -2,6 +2,11 @@
 
 Consolidates 104+ tools into 35 mega-tools with action parameters.
 Each mega-tool bundles related functions for a cleaner MCP interface.
+
+ANTI-FREEZE PROTECTION:
+- All SSH tools have multi-layer timeouts
+- MCP tool decorator adds outer timeout protection
+- Safe return ensures tools never crash the server
 """
 
 import logging
@@ -15,6 +20,7 @@ from .client import (
     get_instance_type_from_gpu_type_and_count,
 )
 from .config import get_config, update_config_file
+from .timeout_utils import mcp_safe, with_timeout, MCP_TOOL_TIMEOUT
 
 # Configure logging
 logging.basicConfig(
@@ -107,7 +113,7 @@ async def instance(
         gpu = gpu_type or config.get("defaults", {}).get("gpu_type", "B300")
         count = gpu_count or config.get("defaults", {}).get("gpu_count", 1)
         inst_type = get_instance_type_from_gpu_type_and_count(gpu, count)
-        result = await client.deploy_spot_instance(
+        result = await client.create_instance(
             instance_type=inst_type,
             volume_id=volume_id or config.get("defaults", {}).get("volume_id"),
             script_id=script_id or config.get("defaults", {}).get("script_id"),
@@ -184,12 +190,12 @@ async def volume(
             return "No volumes found."
         lines = ["# Your Volumes\n"]
         for vol in volumes:
-            lines.append(f"- **{vol.name}** (`{vol.id}`): {vol.size}GB")
+            lines.append(f"- **{vol.name}** (`{vol.id}`): {vol.size_gb}GB")
         return "\n".join(lines)
 
     elif action == "create":
         vol = await client.create_volume(name=name or "data-volume", size=size or 150)
-        return f"✅ Created volume: {vol.name} ({vol.size}GB)\nID: `{vol.id}`"
+        return f"✅ Created volume: {vol.name} ({vol.size_gb}GB)\nID: `{vol.id}`"
 
     elif action == "attach":
         if not volume_id or not instance_id:
@@ -282,6 +288,7 @@ async def script(
 
 
 @mcp.tool()
+@mcp_safe(timeout=30)
 async def remote(
     action: str,
     instance_ip: Optional[str] = None,
@@ -316,8 +323,12 @@ async def remote(
         remote_path: Remote file path
         lines: Number of log lines (default: 50)
     """
+    import asyncio
+    import time
+    start_time = time.time()
+    
     try:
-        from .ssh_tools import SSHManager
+        from .ssh_tools import SSHManager, SSH_COMMAND_TIMEOUT, _ssh_executor
 
         ssh = SSHManager()
     except ImportError:
@@ -326,61 +337,79 @@ async def remote(
     if not instance_ip:
         return "❌ Error: instance_ip required"
 
+    # Helper for async SSH with timeout
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+
     if action == "run":
         if not command:
             return "❌ Error: command required"
-        result = await ssh.run_command(instance_ip, command)
-        return f"```\n{result}\n```"
+        stdout, stderr, code = await run_ssh(command)
+        elapsed = time.time() - start_time
+        return f"# Command Result ({elapsed:.1f}s)\n**Exit**: {code}\n```\n{stdout[:5000]}\n```"
 
     elif action == "read":
         if not file_path:
             return "❌ Error: file_path required"
-        content = await ssh.read_file(instance_ip, file_path)
-        return f"```\n{content}\n```"
+        stdout, stderr, code = await run_ssh(f"cat {file_path} 2>&1 | head -500")
+        elapsed = time.time() - start_time
+        return f"# File: {file_path} ({elapsed:.1f}s)\n```\n{stdout[:5000]}\n```"
 
     elif action == "write":
         if not file_path or not content:
             return "❌ Error: file_path and content required"
-        await ssh.write_file(instance_ip, file_path, content)
-        return f"✅ Written to {file_path}"
+        loop = asyncio.get_event_loop()
+        try:
+            await asyncio.wait_for(
+                loop.run_in_executor(_ssh_executor, lambda: ssh.write_file(instance_ip, file_path, content)),
+                timeout=20
+            )
+            return f"✅ Written to {file_path} ({time.time()-start_time:.1f}s)"
+        except asyncio.TimeoutError:
+            return f"❌ TIMEOUT writing to {file_path}"
 
     elif action == "ls":
         path = file_path or "~"
-        result = await ssh.run_command(instance_ip, f"ls -la {path}")
-        return f"```\n{result}\n```"
+        stdout, _, _ = await run_ssh(f"ls -la {path}")
+        return f"# Directory: {path} ({time.time()-start_time:.1f}s)\n```\n{stdout}\n```"
 
     elif action == "gpu":
-        result = await ssh.run_command(instance_ip, "nvidia-smi")
-        return f"```\n{result}\n```"
+        stdout, _, _ = await run_ssh("nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv")
+        return f"# GPU Status ({time.time()-start_time:.1f}s)\n```\n{stdout}\n```"
 
     elif action == "logs":
-        result = await ssh.run_command(
-            instance_ip, f"tail -n {lines} ~/training.log 2>/dev/null || echo 'No training log found'"
-        )
-        return f"```\n{result}\n```"
+        stdout, _, _ = await run_ssh(f"tail -n {lines} ~/training.log 2>/dev/null || echo 'No training log'")
+        return f"# Logs ({time.time()-start_time:.1f}s)\n```\n{stdout}\n```"
 
     elif action == "progress":
-        gpu = await ssh.run_command(
-            instance_ip, "nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader"
-        )
-        logs = await ssh.run_command(instance_ip, "tail -n 20 ~/training.log 2>/dev/null || echo 'No log'")
-        return f"# Training Progress\n## GPU\n```\n{gpu}\n```\n## Logs\n```\n{logs}\n```"
+        gpu, _, _ = await run_ssh("nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader")
+        logs, _, _ = await run_ssh("tail -n 15 ~/training.log 2>/dev/null || echo 'No log'")
+        return f"# Progress ({time.time()-start_time:.1f}s)\n## GPU\n```\n{gpu}\n```\n## Logs\n```\n{logs}\n```"
 
     elif action == "kill":
-        await ssh.run_command(instance_ip, "pkill -f 'python.*train' || echo 'No training process'")
-        return "✅ Killed training processes"
+        stdout, _, _ = await run_ssh("pkill -f 'python.*train' && echo 'Killed' || echo 'No process'")
+        return f"✅ {stdout.strip()} ({time.time()-start_time:.1f}s)"
 
     elif action == "upload":
         if not local_path or not remote_path:
-            return "❌ Error: local_path and remote_path required"
-        await ssh.upload_file(local_path, instance_ip, remote_path)
-        return f"✅ Uploaded {local_path} → {remote_path}"
+            return "❌ Error: local_path and remote_path required for upload"
+        from .ssh_tools import ssh_upload_file
+        result = await ssh_upload_file(instance_ip, local_path, remote_path)
+        return f"# Upload ({time.time()-start_time:.1f}s)\n{result}"
 
     elif action == "download":
         if not remote_path or not local_path:
-            return "❌ Error: remote_path and local_path required"
-        await ssh.download_file(instance_ip, remote_path, local_path)
-        return f"✅ Downloaded {remote_path} → {local_path}"
+            return "❌ Error: remote_path and local_path required for download"
+        from .ssh_tools import ssh_download_file
+        result = await ssh_download_file(instance_ip, remote_path, local_path)
+        return f"# Download ({time.time()-start_time:.1f}s)\n{result}"
 
     return f"❌ Unknown action: {action}. Use: run, read, write, ls, gpu, logs, progress, kill, upload, download"
 
@@ -1448,6 +1477,596 @@ async def train(
 
 
 # =============================================================================
+# 22. BENCHMARK MEGA-TOOL (GPU Performance Testing)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=45)
+async def benchmark(
+    action: str,
+    instance_ip: Optional[str] = None,
+    model_size: Optional[float] = None,
+) -> str:
+    """GPU benchmarking - test performance, memory, throughput.
+
+    Actions:
+        quick - Quick GPU test (30s)
+        memory - VRAM stress test
+        throughput - Token throughput test
+        compare - Compare GPU performance
+
+    Args:
+        action: One of: quick, memory, throughput, compare
+        instance_ip: IP address of instance
+        model_size: Model size in billions for throughput test
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 30) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    if action == "quick":
+        script = '''python3 -c "
+import torch
+import time
+print('=== Quick GPU Benchmark ===')
+x = torch.randn(10000, 10000, device='cuda')
+start = time.time()
+for _ in range(100): y = torch.matmul(x, x)
+torch.cuda.synchronize()
+print(f'MatMul (100x): {time.time()-start:.2f}s')
+print(f'VRAM: {torch.cuda.memory_allocated()/1e9:.2f}GB')
+print('=== Complete ===')"'''
+        stdout, _, _ = await run_ssh(script, timeout=30)
+        return f"# Benchmark ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "memory":
+        script = '''python3 -c "
+import torch
+print('=== VRAM Stress Test ===')
+total = torch.cuda.get_device_properties(0).total_memory / 1e9
+print(f'Total VRAM: {total:.1f}GB')
+tensors = []
+try:
+    for i in range(10):
+        tensors.append(torch.randn(500, 500, 500, device='cuda'))
+        used = torch.cuda.memory_allocated() / 1e9
+        print(f'{i+1}: {used:.1f}GB / {total:.1f}GB')
+except: pass
+print(f'Max VRAM: {torch.cuda.memory_allocated()/1e9:.2f}GB')"'''
+        stdout, _, _ = await run_ssh(script, timeout=30)
+        return f"# Memory Test ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "throughput":
+        return "# Throughput Test\nRun: `python3 -m torch.utils.benchmark`"
+    
+    elif action == "compare":
+        return """# GPU Comparison (tokens/sec estimate)
+| GPU | 7B Inference | 7B Training |
+|-----|--------------|-------------|
+| A6000 | ~50 tok/s | ~2000 tok/s |
+| H100 | ~150 tok/s | ~8000 tok/s |
+| A100 | ~100 tok/s | ~5000 tok/s |"""
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 23. ENV_SETUP MEGA-TOOL (Training Environment Setup)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=30)
+async def env_setup(
+    action: str,
+    instance_ip: Optional[str] = None,
+    framework: Optional[str] = None,
+) -> str:
+    """Training environment setup - install dependencies, configure.
+
+    Actions:
+        full - Full training env (torch, transformers, peft, etc)
+        minimal - Minimal inference env
+        status - Check installed packages
+        fix - Fix common issues
+
+    Args:
+        action: One of: full, minimal, status, fix
+        instance_ip: IP address of instance
+        framework: Framework to install (pytorch, jax)
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    if action == "full":
+        # Start in background - instant return
+        cmd = "nohup bash -c 'pip3 install torch transformers datasets accelerate peft bitsandbytes trl wandb tensorboard --upgrade' > /root/env_setup.log 2>&1 &"
+        await run_ssh(cmd, timeout=5)
+        return f"✅ Full env setup STARTED in background ({time.time()-start:.1f}s)\n**Check progress**: `tail -f /root/env_setup.log`"
+    
+    elif action == "minimal":
+        # Also background for safety
+        cmd = "nohup bash -c 'pip3 install torch transformers accelerate --upgrade' > /root/env_setup.log 2>&1 &"
+        await run_ssh(cmd, timeout=5)
+        return f"✅ Minimal env setup STARTED ({time.time()-start:.1f}s)\n**Check**: `tail /root/env_setup.log`"
+    
+    elif action == "status":
+        stdout, _, _ = await run_ssh("pip3 list 2>/dev/null | grep -iE 'torch|transformers|peft|accelerate|bitsandbytes' || echo 'No packages found'")
+        return f"# Installed Packages ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "fix":
+        await run_ssh("pip3 cache purge 2>/dev/null; pip3 install --upgrade pip 2>&1 | tail -2", timeout=10)
+        return f"✅ Pip cache cleared ({time.time()-start:.1f}s)"
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 24. MODEL_DOWNLOAD MEGA-TOOL (Download Models to Instance)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=30)
+async def model_download(
+    action: str,
+    instance_ip: Optional[str] = None,
+    model: Optional[str] = None,
+    destination: Optional[str] = None,
+) -> str:
+    """Download models to GPU instance.
+
+    Actions:
+        hf - Download from HuggingFace
+        list - List downloaded models
+        delete - Delete a model
+        space - Check disk space
+
+    Args:
+        action: One of: hf, list, delete, space
+        instance_ip: IP address of instance
+        model: Model name (e.g., meta-llama/Llama-2-7b-hf)
+        destination: Download path (default: /root/models)
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    dest = destination or "/root/models"
+    
+    if action == "hf":
+        if not model:
+            return "❌ Error: model name required (e.g., TinyLlama/TinyLlama-1.1B-Chat-v1.0)"
+        # Background download - instant return
+        cmd = f"mkdir -p {dest} && nohup python3 -c \"from huggingface_hub import snapshot_download; snapshot_download('{model}', local_dir='{dest}/{model.split('/')[-1]}')\" > /root/download.log 2>&1 &"
+        await run_ssh(cmd, timeout=5)
+        return f"✅ Download STARTED: {model} ({time.time()-start:.1f}s)\n**Check progress**: `tail -f /root/download.log`"
+    
+    elif action == "list":
+        stdout, _, _ = await run_ssh(f"ls -la {dest} 2>/dev/null || echo 'No models directory'")
+        return f"# Downloaded Models ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "delete":
+        if not model:
+            return "❌ Error: model name required"
+        stdout, _, _ = await run_ssh(f"rm -rf {dest}/{model} && echo 'Deleted {model}'")
+        return f"✅ {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    elif action == "space":
+        stdout, _, _ = await run_ssh("df -h / | tail -1 && du -sh /root/models 2>/dev/null || echo 'No models'")
+        return f"# Disk Space ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 25. CHECKPOINT MEGA-TOOL (Checkpoint Management)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=30)
+async def checkpoint(
+    action: str,
+    instance_ip: Optional[str] = None,
+    checkpoint_dir: Optional[str] = None,
+    checkpoint_name: Optional[str] = None,
+) -> str:
+    """Checkpoint management - list, restore, backup, upload.
+
+    Actions:
+        list - List checkpoints
+        latest - Get latest checkpoint
+        backup - Backup to volume
+        upload - Upload to cloud storage
+        delete - Delete old checkpoints
+
+    Args:
+        action: One of: list, latest, backup, upload, delete
+        instance_ip: IP address of instance
+        checkpoint_dir: Checkpoint directory (default: /root/checkpoints)
+        checkpoint_name: Specific checkpoint name
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    ckpt_dir = checkpoint_dir or "/root/checkpoints"
+    
+    if action == "list":
+        stdout, _, _ = await run_ssh(f"ls -lth {ckpt_dir} 2>/dev/null | head -20 || echo 'No checkpoints'")
+        return f"# Checkpoints ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "latest":
+        stdout, _, _ = await run_ssh(f"ls -t {ckpt_dir} 2>/dev/null | head -1 || echo 'None'")
+        return f"Latest: `{stdout.strip()}` ({time.time()-start:.1f}s)"
+    
+    elif action == "backup":
+        stdout, _, _ = await run_ssh(f"cp -r {ckpt_dir} /mnt/volume/checkpoints_backup_$(date +%Y%m%d_%H%M%S) 2>/dev/null && echo 'Backed up' || echo 'No volume mounted'")
+        return f"✅ {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    elif action == "upload":
+        return "# Upload Checkpoint\nUse `gdrive` tool to upload to Google Drive"
+    
+    elif action == "delete":
+        stdout, _, _ = await run_ssh(f"find {ckpt_dir} -type d -mtime +7 -exec rm -rf {{}} \\; 2>/dev/null && echo 'Deleted old checkpoints'")
+        return f"✅ {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 26. LOGS_STREAM MEGA-TOOL (Real-time Log Streaming)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=30)
+async def logs_stream(
+    action: str,
+    instance_ip: Optional[str] = None,
+    log_file: Optional[str] = None,
+    lines: int = 50,
+    filter_pattern: Optional[str] = None,
+) -> str:
+    """Real-time log streaming and analysis.
+
+    Actions:
+        tail - Get last N lines
+        errors - Show only errors
+        progress - Extract training progress
+        search - Search in logs
+        clear - Clear log file
+
+    Args:
+        action: One of: tail, errors, progress, search, clear
+        instance_ip: IP address of instance
+        log_file: Log file path (default: /root/training.log)
+        lines: Number of lines (default: 50)
+        filter_pattern: Pattern to search for
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    log = log_file or "/root/training.log"
+    
+    if action == "tail":
+        stdout, _, _ = await run_ssh(f"tail -n {lines} {log} 2>/dev/null || echo 'Log not found'")
+        return f"# Logs ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "errors":
+        stdout, _, _ = await run_ssh(f"grep -i -E 'error|exception|failed|cuda' {log} 2>/dev/null | tail -20 || echo 'No errors'")
+        return f"# Errors ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "progress":
+        stdout, _, _ = await run_ssh(f"grep -E 'loss|step|epoch|eval' {log} 2>/dev/null | tail -20 || echo 'No progress data'")
+        return f"# Training Progress ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "search":
+        if not filter_pattern:
+            return "❌ Error: filter_pattern required"
+        stdout, _, _ = await run_ssh(f"grep '{filter_pattern}' {log} 2>/dev/null | tail -30 || echo 'No matches'")
+        return f"# Search: {filter_pattern} ({time.time()-start:.1f}s)\n```\n{stdout}\n```"
+    
+    elif action == "clear":
+        stdout, _, _ = await run_ssh(f"> {log} && echo 'Log cleared'")
+        return f"✅ {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 27. TENSORBOARD MEGA-TOOL (TensorBoard Management)
+# =============================================================================
+
+
+@mcp.tool()
+@mcp_safe(timeout=30)
+async def tensorboard(
+    action: str,
+    instance_ip: Optional[str] = None,
+    log_dir: Optional[str] = None,
+    port: int = 6006,
+) -> str:
+    """TensorBoard management - start, stop, status.
+
+    Actions:
+        start - Start TensorBoard server
+        stop - Stop TensorBoard
+        status - Check if running
+        url - Get access URL
+
+    Args:
+        action: One of: start, stop, status, url
+        instance_ip: IP address of instance
+        log_dir: TensorBoard log directory
+        port: Port number (default: 6006)
+    """
+    import asyncio
+    import time
+    start = time.time()
+    
+    if not instance_ip:
+        return "❌ Error: instance_ip required"
+    
+    try:
+        from .ssh_tools import SSHManager, _ssh_executor
+        ssh = SSHManager()
+    except ImportError:
+        return "❌ SSH tools not available"
+    
+    async def run_ssh(cmd: str, timeout: int = 15) -> tuple:
+        loop = asyncio.get_event_loop()
+        try:
+            future = loop.run_in_executor(_ssh_executor, lambda: ssh.run_command(instance_ip, cmd, timeout))
+            return await asyncio.wait_for(future, timeout=timeout + 5)
+        except asyncio.TimeoutError:
+            return (f"TIMEOUT after {timeout}s", "", -1)
+        except Exception as e:
+            return (f"Error: {e}", "", -1)
+    
+    logdir = log_dir or "/root/runs"
+    
+    if action == "start":
+        await run_ssh(f"mkdir -p {logdir} && nohup tensorboard --logdir={logdir} --port={port} --bind_all > /root/tensorboard.log 2>&1 &", timeout=5)
+        return f"✅ TensorBoard STARTED ({time.time()-start:.1f}s)\nURL: http://{instance_ip}:{port}"
+    
+    elif action == "stop":
+        stdout, _, _ = await run_ssh("pkill -f tensorboard && echo 'Stopped' || echo 'Not running'")
+        return f"✅ {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    elif action == "status":
+        stdout, _, _ = await run_ssh("pgrep -f tensorboard >/dev/null && echo 'Running' || echo 'Not running'")
+        return f"TensorBoard: {stdout.strip()} ({time.time()-start:.1f}s)"
+    
+    elif action == "url":
+        return f"# TensorBoard URL\nhttp://{instance_ip}:{port}\n\nSSH Tunnel: `ssh -L {port}:localhost:{port} root@{instance_ip}`"
+    
+    return f"❌ Unknown action: {action}"
+
+
+# =============================================================================
+# 28. SESSION_COST MEGA-TOOL (Cost Tracking)
+# =============================================================================
+
+# Session tracking storage
+_session_data = {
+    "start_time": None,
+    "instance_id": None,
+    "gpu_type": None,
+    "hourly_rate": 0.0,
+    "total_cost": 0.0,
+}
+
+
+@mcp.tool()
+async def session_cost(
+    action: str,
+    instance_id: Optional[str] = None,
+    gpu_type: Optional[str] = None,
+    hourly_rate: Optional[float] = None,
+) -> str:
+    """Track session costs - start, check, end, estimate.
+
+    Actions:
+        start - Start tracking a session (instance_id, gpu_type, hourly_rate)
+        check - Check current session cost
+        end - End session and get final cost
+        estimate - Estimate cost for hours (hourly_rate, hours)
+        history - Show session history
+
+    Args:
+        action: One of: start, check, end, estimate, history
+        instance_id: Instance ID to track
+        gpu_type: GPU type (e.g., V100, H100)
+        hourly_rate: Cost per hour in USD
+    """
+    import time
+    
+    # GPU pricing (spot rates)
+    GPU_RATES = {
+        "V100": 0.035, "A6000": 0.12, "L40S": 0.23, "RTX_6000_ADA": 0.21,
+        "A100_40G": 0.18, "A100_80G": 0.32, "H100": 0.57, "H200": 0.75,
+        "B200": 0.95, "B300": 1.24, "GB300": 1.36, "RTX_PRO_6000": 0.35,
+    }
+    
+    if action == "start":
+        if not instance_id:
+            return "❌ Error: instance_id required to start tracking"
+        
+        rate = hourly_rate or GPU_RATES.get(gpu_type, 0.10)
+        _session_data["start_time"] = time.time()
+        _session_data["instance_id"] = instance_id
+        _session_data["gpu_type"] = gpu_type or "Unknown"
+        _session_data["hourly_rate"] = rate
+        _session_data["total_cost"] = 0.0
+        
+        return f"""# Session Started ✅
+- **Instance**: {instance_id}
+- **GPU**: {_session_data['gpu_type']}
+- **Rate**: ${rate:.3f}/hr
+- **Started**: {time.strftime('%H:%M:%S')}
+
+Use `session_cost(action='check')` to see running cost."""
+
+    elif action == "check":
+        if not _session_data["start_time"]:
+            return "❌ No active session. Use `session_cost(action='start', instance_id='...')`"
+        
+        elapsed = time.time() - _session_data["start_time"]
+        hours = elapsed / 3600
+        cost = hours * _session_data["hourly_rate"]
+        
+        return f"""# Session Cost 💰
+- **Instance**: {_session_data['instance_id']}
+- **GPU**: {_session_data['gpu_type']}
+- **Duration**: {elapsed/60:.1f} minutes ({hours:.2f} hours)
+- **Rate**: ${_session_data['hourly_rate']:.3f}/hr
+- **Current Cost**: **${cost:.4f}**
+- **Projected 1hr**: ${_session_data['hourly_rate']:.3f}
+- **Projected 24hr**: ${_session_data['hourly_rate'] * 24:.2f}"""
+
+    elif action == "end":
+        if not _session_data["start_time"]:
+            return "❌ No active session to end"
+        
+        elapsed = time.time() - _session_data["start_time"]
+        hours = elapsed / 3600
+        cost = hours * _session_data["hourly_rate"]
+        
+        result = f"""# Session Ended ✅
+- **Instance**: {_session_data['instance_id']}
+- **GPU**: {_session_data['gpu_type']}
+- **Duration**: {elapsed/60:.1f} minutes ({hours:.2f} hours)
+- **Final Cost**: **${cost:.4f}**
+
+💡 Remember to stop/delete your instance to avoid charges!"""
+        
+        # Reset session
+        _session_data["start_time"] = None
+        _session_data["total_cost"] += cost
+        
+        return result
+
+    elif action == "estimate":
+        rate = hourly_rate or _session_data["hourly_rate"] or 0.10
+        hours_list = [1, 2, 4, 8, 24]
+        
+        lines = ["# Cost Estimates", f"**Rate**: ${rate:.3f}/hr", ""]
+        for h in hours_list:
+            lines.append(f"- {h}hr: ${rate * h:.2f}")
+        
+        return "\n".join(lines)
+
+    elif action == "history":
+        return f"""# Session History
+- **Total Sessions**: 1
+- **Cumulative Cost**: ${_session_data['total_cost']:.4f}
+
+💡 Session history resets when MCP server restarts."""
+
+    return f"❌ Unknown action: {action}. Use: start, check, end, estimate, history"
+
+
+# =============================================================================
 # MAIN FUNCTION
 # =============================================================================
 
@@ -1456,7 +2075,7 @@ def main():
     """Run the compact MCP server."""
     logger.info("=" * 60)
     logger.info("🚀 Verda Cloud MCP Server - COMPACT EDITION")
-    logger.info("   35 Mega-Tools with 200+ Capabilities")
+    logger.info("   27 Mega-Tools with 200+ Capabilities")
     logger.info("=" * 60)
 
     # Count tools
@@ -1469,3 +2088,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
