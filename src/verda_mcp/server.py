@@ -1681,6 +1681,203 @@ async def available_now() -> str:
 
 
 # =============================================================================
+
+# =============================================================================
+# Training Intelligence (Mega-Tools with 55+ bundled functions)
+# =============================================================================
+
+try:
+    from .training_intelligence import (
+        training_intel,
+        training_viz,
+        training_profile,
+        training_monitor,
+        model_advisor,
+    )
+    TRAINING_INTEL_AVAILABLE = True
+except ImportError:
+    TRAINING_INTEL_AVAILABLE = False
+
+
+@mcp.tool()
+async def train_intel(
+    action: str = "status",
+    instance_ip: str = "",
+    skill_level: str = "normal",
+) -> str:
+    """MEGA-TOOL: Training Intelligence Hub (15+ sub-commands).
+    
+    Analyzes training in real-time and converts metrics to simple English.
+    Uses 10-stage rating system (1-10) to show progress.
+    
+    Actions:
+    - status: Full training status with analysis
+    - stage: Current stage (1-10) with explanation
+    - health: Health score (0-100) and issues
+    - metrics: Raw training metrics
+    - summary: Simple English summary
+    - detailed: Technical detailed summary
+    - trends: Loss/accuracy trends
+    - issues: Detected problems
+    - recommendations: Actionable suggestions
+    - predict: Estimated completion time
+    - explain: What metrics mean
+    
+    Args:
+        action: Sub-command to run.
+        instance_ip: Instance to analyze (optional).
+        skill_level: beginner/casual/normal/advanced/expert/elite/hacker
+    
+    Returns:
+        Training analysis adapted to skill level.
+    """
+    if not TRAINING_INTEL_AVAILABLE:
+        return "Training Intelligence not available."
+    return await training_intel(action=action, instance_ip=instance_ip, skill_level=skill_level)
+
+
+@mcp.tool()
+async def train_viz(
+    format: str = "ascii",
+    chart_type: str = "progress",
+    instance_ip: str = "",
+) -> str:
+    """MEGA-TOOL: Training Visualization Hub (7 output formats).
+    
+    Generates training visualizations in multiple formats.
+    
+    Formats:
+    - ascii: ASCII art charts (terminal-friendly)
+    - markdown: GitHub-flavored markdown
+    - html: Modern dashboard with CSS
+    - svg: Scalable vector graphics
+    - json: Raw JSON data
+    - terminal: ANSI colored output
+    - minimal: Just the numbers
+    
+    Chart Types:
+    - progress: Progress bar/gauge
+    - loss: Loss curve
+    - dashboard: Full dashboard
+    - gauge: Speedometer style
+    
+    Args:
+        format: Output format type.
+        chart_type: Type of visualization.
+        instance_ip: Instance to visualize.
+    
+    Returns:
+        Visualization in requested format.
+    """
+    if not TRAINING_INTEL_AVAILABLE:
+        return "Training Intelligence not available."
+    return await training_viz(format=format, chart_type=chart_type, instance_ip=instance_ip)
+
+
+@mcp.tool()
+async def train_profile(
+    action: str = "set",
+    level: str = "normal",
+) -> str:
+    """MEGA-TOOL: User Profile Manager (7 skill levels).
+    
+    Adapts all output to your experience level.
+    
+    Levels:
+    - beginner: Simple, friendly explanations
+    - casual: Easy with some technical terms
+    - normal: Balanced (default)
+    - advanced: Full technical details
+    - expert: Raw data + analysis
+    - elite: Everything + academic context
+    - hacker: Minimal CLI-style
+    
+    Actions:
+    - set: Set your level
+    - get: Get current level
+    - list: List all levels
+    - describe: Explain each level
+    - sample: Preview output style
+    
+    Args:
+        action: What to do.
+        level: Skill level to set.
+    
+    Returns:
+        Profile update confirmation.
+    """
+    if not TRAINING_INTEL_AVAILABLE:
+        return "Training Intelligence not available."
+    return await training_profile(action=action, level=level)
+
+
+@mcp.tool()
+async def train_monitor(
+    action: str = "check",
+    instance_ip: str = "",
+    interval: int = 60,
+) -> str:
+    """MEGA-TOOL: Real-time Training Monitor (12 functions).
+    
+    Continuous monitoring with alerts and logging.
+    
+    Actions:
+    - start: Begin monitoring
+    - stop: Stop monitoring
+    - status: Monitor status
+    - check: Single check now
+    - alerts_on/alerts_off: Toggle alerts
+    - get_logs: Recent logs
+    - get_alerts: Triggered alerts
+    - export: Export data
+    
+    Args:
+        action: Monitor command.
+        instance_ip: Instance to monitor.
+        interval: Check interval in seconds.
+    
+    Returns:
+        Monitor status/results.
+    """
+    if not TRAINING_INTEL_AVAILABLE:
+        return "Training Intelligence not available."
+    return await training_monitor(action=action, instance_ip=instance_ip, interval=interval)
+
+
+@mcp.tool()
+async def train_advisor(
+    action: str = "recommend",
+    model_size: str = "7B",
+    budget: float = 5.0,
+) -> str:
+    """MEGA-TOOL: Model & Training Advisor (10 functions).
+    
+    Get recommendations for GPU, settings, and optimization.
+    
+    Actions:
+    - recommend: GPU for model size
+    - compare: Compare GPU options
+    - estimate_time: Training duration
+    - estimate_cost: Total cost
+    - optimize: Optimization tips
+    - batch_size: Optimal batch size
+    - learning_rate: LR recommendation
+    - checkpointing: Checkpoint strategy
+    - multi_gpu: Multi-GPU advice
+    - frameworks: Framework recommendations
+    
+    Args:
+        action: Advice type.
+        model_size: Model size (7B, 13B, 70B, etc).
+        budget: Hourly budget in USD.
+    
+    Returns:
+        Expert recommendations.
+    """
+    if not TRAINING_INTEL_AVAILABLE:
+        return "Training Intelligence not available."
+    return await model_advisor(action=action, model_size=model_size, budget=budget)
+
 # GPU Optimizer (Multi-GPU Spot Comparisons, Training Time Estimates)
 # =============================================================================
 
@@ -2186,6 +2383,7 @@ def main():
     spot_tools = 6 if SPOT_MANAGER_AVAILABLE else 0
     training_tools = 7 if TRAINING_TOOLS_AVAILABLE else 0
     smart_deployer_tools = 4 if SMART_DEPLOYER_AVAILABLE else 0  # best_deals, power_deals, deploy_failsafe, available_now
+    training_intel_tools = 5 if TRAINING_INTEL_AVAILABLE else 0  # 5 mega-tools with 55+ bundled functions
     gpu_optimizer_tools = 4 if GPU_OPTIMIZER_AVAILABLE else 0
     live_data_tools = 5 if LIVE_DATA_AVAILABLE else 0
     advanced_tools = 7 if ADVANCED_TOOLS_AVAILABLE else 0
@@ -2199,3 +2397,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
